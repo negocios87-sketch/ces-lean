@@ -29,8 +29,9 @@ function classifyProduct(v) {
 function classifyCampaign(v) {
   if (!v) return null;
   const s = String(v).trim();
-  if (LEAN_IDS.has(s)) return 'LEAN';
-  if (CES_IDS.has(s))  return 'CES';
+  // ID exato (Google) OU contém texto (META/LinkedIn)
+  if (LEAN_IDS.has(s) || (/lean/i.test(s) && !/ascesso/i.test(s))) return 'LEAN';
+  if (CES_IDS.has(s)  || (/ces/i.test(s)  && !/ascesso/i.test(s))) return 'CES';
   return null;
 }
 
@@ -38,8 +39,9 @@ function classifyOrigem(v) {
   if (!v) return 'Outras Origens';
   const s = String(v).trim();
   if (/pfcc/i.test(s)) return 'PFCC';
-  if (LEAN_IDS.has(s)) return 'LEAN';
-  if (CES_IDS.has(s))  return 'CES';
+  // ID exato (Google) OU contém texto (META/LinkedIn)
+  if (LEAN_IDS.has(s) || (/lean/i.test(s) && !/ascesso/i.test(s))) return 'LEAN';
+  if (CES_IDS.has(s)  || (/ces/i.test(s)  && !/ascesso/i.test(s))) return 'CES';
   return 'Outras Origens';
 }
 
