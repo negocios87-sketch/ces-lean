@@ -174,8 +174,15 @@ app.get('/api/report', async (req,res) => {
           g.mes.t++;g.mes.rev+=val;
           if (!g.mes.dia[_d]) g.mes.dia[_d]={t:0,r:0};
           g.mes.dia[_d].t++;g.mes.dia[_d].r+=val;
-          if (!g.mes.origens[origem]) g.mes.origens[origem]={t:0,rev:0};
+          if (!g.mes.origens[origem]) g.mes.origens[origem]={t:0,rev:0,deals:[]};
           g.mes.origens[origem].t++;g.mes.origens[origem].rev+=val;
+          g.mes.origens[origem].deals.push({
+            campanha: String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho: deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            valor: val,
+            produto: String(deal[PRODUCT_FIELD]||'—'),
+          });
           g.mes.origTemporal[tempCat]=(g.mes.origTemporal[tempCat]||0)+1;
         }
         if (wSet.has(_w)) {if (!g.sem[_w]) g.sem[_w]={t:0,r:0};g.sem[_w].t++;g.sem[_w].r+=val;}
@@ -246,7 +253,7 @@ app.get('/api/report', async (req,res) => {
           ticket: p.ganhos.mes.t?p.ganhos.mes.rev/p.ganhos.mes.t:0,
           porDia: allDays.map(d=>({d,v:p.ganhos.mes.dia[d]?.t||0,r:p.ganhos.mes.dia[d]?.r||0})),
           porSemana:weeks.map(w=>({w,v:p.ganhos.sem[w]?.t||0,r:p.ganhos.sem[w]?.r||0})),
-          origens:Object.entries(p.ganhos.mes.origens).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0})),
+          origens:Object.entries(p.ganhos.mes.origens).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
           origemTemporal:origTemporalSer(p.ganhos.mes.origTemporal,p.ganhos.mes.t),
         },
         porCampanha: {
