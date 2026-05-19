@@ -253,6 +253,65 @@ function mkBar(id,labels,values,col,opts={}){
       }}});
 }
 
+
+/* Linha de distribuição percentual por faixa de score */
+function mkScoreLine(id, items, col){
+  dk(id);
+  const ctx=document.getElementById(id); if(!ctx)return;
+  const labels=(items||[]).map(x=>x.label);
+  const values=(items||[]).map(x=>x.pct||0);
+
+  const scoreBandPlugin = {
+    id:'scoreBandPlugin',
+    beforeDatasetsDraw(chart){
+      const {ctx, chartArea, scales} = chart;
+      if(!chartArea || !scales?.x) return;
+      const startIndex=4, endIndex=6; // De 6 a 8,9 — região ICP
+      const x0=scales.x.getPixelForValue(startIndex)-((scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0))/2);
+      const x1=scales.x.getPixelForValue(endIndex)+((scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0))/2);
+      ctx.save();
+      ctx.fillStyle='rgba(184,135,63,.16)';
+      ctx.fillRect(x0, chartArea.top, x1-x0, chartArea.bottom-chartArea.top);
+      ctx.restore();
+    }
+  };
+
+  charts[id]=new Chart(ctx,{type:'line',
+    data:{labels,datasets:[{
+      data:values,
+      borderColor:col,
+      backgroundColor:col+'18',
+      borderWidth:2,
+      fill:false,
+      tension:.28,
+      pointRadius:4,
+      pointHoverRadius:5,
+      pointBackgroundColor:col,
+    }]},
+    plugins:[scoreBandPlugin],
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:24,right:8,left:4,bottom:0}},
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
+          formatter:v=>Number(v).toFixed(v%1?1:0)+'%',
+          color:'#1c2b3a',
+          backgroundColor:'rgba(255,255,255,.78)',
+          borderRadius:3,
+          padding:{top:2,bottom:2,left:4,right:4},
+          font:{family:'DM Sans',size:9,weight:'700'},
+          anchor:'end',align:'top',offset:3,
+        },
+        tooltip:{callbacks:{label:c=>' '+Number(c.parsed.y).toFixed(1)+'% dos criados'}},
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}},border:{color:'transparent'}},
+        y:{grid:{color:GC},ticks:{font:{size:9},callback:v=>v+'%',maxTicksLimit:5},border:{color:'transparent'},beginAtZero:true,suggestedMax:40}
+      }}
+  });
+}
+
 /* Stacked bar com rótulo do total */
 function mkStackedBar(id,labels,datasets){
   dk(id);
@@ -401,6 +460,13 @@ function render(){
       </div>
     </div>
 
+    <div class="charts-1">
+      <div class="ccard">
+        <div class="ccard-ttl">% por etiqueta de score · criados no mês atual</div>
+        <div class="cwrap md"><canvas id="ch-cri-score"></canvas></div>
+      </div>
+    </div>
+
     <div class="kpi-row kpi5">
       <div class="kpi"><div class="kpi-accent" style="background:${col}"></div>
         <div class="lbl">Total criado no mês</div><div class="val">${fmtN(criados.total)}</div><div class="sub">${criados.mediaDia} por dia</div></div>
@@ -514,6 +580,7 @@ function render(){
     {label:'Perdido', data:criados.porDia.map(x=>x.p),backgroundColor:'#c0533a55',borderWidth:0,borderRadius:2},
   ]);
   mkBar('ch-cri-sem', wLabels, criados.porSemana.map(x=>x.v), col, {weekly:true});
+  mkScoreLine('ch-cri-score', criados.scoreFaixas || [], col);
   mkBar('ch-gp-dia',  dLabels, ganhos.porProduto.porDia.map(x=>x.v),  col, {maxTicks:20});
   mkBar('ch-gp-sem',  wLabels, ganhos.porProduto.porSemana.map(x=>x.v), col, {weekly:true});
   mkBar('ch-gc-dia',  dLabels, ganhos.porCampanha.porDia.map(x=>x.v), col, {maxTicks:20});
