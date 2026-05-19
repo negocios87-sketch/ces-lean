@@ -452,5 +452,263 @@ async function doRefresh(){
 
 loadData();
 </script>
+
+<!-- ════════════════════════════════════════════════════════
+     FERRAMENTAS DE APRESENTAÇÃO
+     Atalhos: L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom
+     ════════════════════════════════════════════════════════ -->
+
+<!-- Overlay canvas (caneta + setas) -->
+<canvas id="pCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;"></canvas>
+
+<!-- SVG overlay (laser) -->
+<svg id="pSvg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8001;pointer-events:none;overflow:visible;"></svg>
+
+<!-- Spotlight overlay -->
+<div id="pSpot" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:7999;pointer-events:none;display:none;"></div>
+
+<!-- Zoom overlay -->
+<div id="pZoomBox" style="position:fixed;border:2px dashed #f5c518;background:rgba(245,197,24,.08);z-index:8010;pointer-events:none;display:none;"></div>
+<div id="pZoomView" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9000;background:#f2ede6;display:none;overflow:hidden;">
+  <div id="pZoomContent" style="position:absolute;transform-origin:top left;"></div>
+  <button onclick="exitZoom()" style="position:fixed;top:18px;right:24px;background:#1c2b3a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;z-index:9999;">✕ Sair do Zoom (Esc)</button>
+</div>
+
+<!-- Toolbar -->
+<div id="pToolbar" style="
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(28,43,58,.95);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.12);border-radius:40px;
+  display:flex;align-items:center;gap:4px;padding:6px 10px;
+  z-index:9500;box-shadow:0 8px 32px rgba(0,0,0,.4);
+  font-family:'DM Sans',sans-serif;
+">
+  <div style="font-size:.6rem;color:rgba(255,255,255,.3);letter-spacing:.08em;text-transform:uppercase;padding:0 8px 0 4px;border-right:1px solid rgba(255,255,255,.1);margin-right:4px;">Apresentação</div>
+  <button class="ptool" id="pt-laser"   onclick="setTool('laser')"   title="Laser (L)">🔴 Laser</button>
+  <button class="ptool" id="pt-arrow"   onclick="setTool('arrow')"   title="Seta (A)">↗ Seta</button>
+  <button class="ptool" id="pt-pen"     onclick="setTool('pen')"     title="Caneta (C)">✏️ Caneta</button>
+  <button class="ptool" id="pt-spot"    onclick="setTool('spot')"    title="Spotlight (S)">🔦 Foco</button>
+  <button class="ptool" id="pt-zoom"    onclick="setTool('zoom')"    title="Zoom (Z)">🔍 Zoom</button>
+  <div style="width:1px;height:20px;background:rgba(255,255,255,.1);margin:0 4px;"></div>
+  <button class="ptool" id="pt-clear"   onclick="clearCanvas()"      title="Limpar (Del)" style="color:rgba(255,100,100,.8)">✕ Limpar</button>
+</div>
+
+<style>
+.ptool{
+  background:none;border:none;color:rgba(255,255,255,.65);
+  font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;
+  padding:6px 13px;border-radius:24px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;letter-spacing:.02em;
+}
+.ptool:hover{background:rgba(255,255,255,.1);color:#fff}
+.ptool.on{background:rgba(245,197,24,.25);color:#f5c518;border:1px solid rgba(245,197,24,.4)}
+</style>
+
+<script>
+/* ══ PRESENTATION ENGINE ══════════════════════════════════ */
+let pTool   = null;   // laser | arrow | pen | spot | zoom
+let pDraw   = false;  // mouse pressed
+let pPoints = [];     // pen stroke points
+let pArrow  = null;   // {x1,y1} start of arrow
+
+const pCvs  = document.getElementById('pCanvas');
+const pCtx  = pCvs.getContext('2d');
+const pSvg  = document.getElementById('pSvg');
+const pSpot = document.getElementById('pSpot');
+
+/* resize canvas */
+function resizeCvs(){
+  pCvs.width  = window.innerWidth;
+  pCvs.height = window.innerHeight;
+}
+resizeCvs();
+window.addEventListener('resize', resizeCvs);
+
+/* ── Tool selector ──────────────────────────────────────── */
+function setTool(t){
+  if(pTool === t){ pTool=null; }
+  else            { pTool=t;   }
+  ['laser','arrow','pen','spot','zoom'].forEach(id=>{
+    const btn = document.getElementById('pt-'+id);
+    if(btn) btn.classList.toggle('on', pTool===id);
+  });
+  pCvs.style.pointerEvents  = ['arrow','pen','zoom'].includes(pTool) ? 'auto' : 'none';
+  pSvg.style.pointerEvents  = pTool==='laser' ? 'none' : 'none';
+  document.body.style.cursor = pTool ? 'crosshair' : '';
+  if(pTool !== 'spot') { pSpot.style.display='none'; }
+  if(pTool !== 'laser'){ clearLaser(); }
+  if(pTool !== 'zoom') { document.getElementById('pZoomBox').style.display='none'; }
+  if(pTool === 'spot') pSpot.style.display='block';
+}
+
+/* ── Keyboard shortcuts ─────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.key==='l'||e.key==='L') setTool('laser');
+  if(e.key==='a'||e.key==='A') setTool('arrow');
+  if(e.key==='c'||e.key==='C') setTool('pen');
+  if(e.key==='s'||e.key==='S') setTool('spot');
+  if(e.key==='z'||e.key==='Z') setTool('zoom');
+  if(e.key==='Delete'||e.key==='Backspace') clearCanvas();
+  if(e.key==='Escape') { exitZoom(); setTool(null); }
+});
+
+/* ── LASER ──────────────────────────────────────────────── */
+let laserEl = null;
+function clearLaser(){ if(laserEl){ laserEl.remove(); laserEl=null; } }
+
+document.addEventListener('mousemove', e => {
+  if(pTool==='laser'){
+    if(!laserEl){
+      laserEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      laserEl.setAttribute('r','10');
+      laserEl.setAttribute('fill','rgba(255,30,30,.85)');
+      laserEl.setAttribute('filter','url(#laserBlur)');
+      // Add glow filter once
+      if(!document.getElementById('laserDefs')){
+        const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+        defs.id='laserDefs';
+        defs.innerHTML=`
+          <filter id="laserBlur" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>`;
+        pSvg.prepend(defs);
+      }
+      pSvg.appendChild(laserEl);
+    }
+    laserEl.setAttribute('cx', e.clientX);
+    laserEl.setAttribute('cy', e.clientY);
+  }
+
+  if(pTool==='spot'){
+    pSpot.style.background=`radial-gradient(circle 200px at ${e.clientX}px ${e.clientY}px, transparent 0%, rgba(0,0,0,.72) 100%)`;
+  }
+});
+
+/* ── ARROW ──────────────────────────────────────────────── */
+pCvs.addEventListener('mousedown', e => {
+  if(!pTool) return;
+  pDraw=true;
+  if(pTool==='arrow')  pArrow={x1:e.clientX,y1:e.clientY};
+  if(pTool==='pen')    { pPoints=[{x:e.clientX,y:e.clientY}]; }
+  if(pTool==='zoom')   zoomStart(e);
+});
+
+pCvs.addEventListener('mousemove', e => {
+  if(!pDraw) return;
+  if(pTool==='pen'){
+    pPoints.push({x:e.clientX,y:e.clientY});
+    drawStroke(pPoints, '#e03030', 2.5);
+  }
+  if(pTool==='zoom') zoomDrag(e);
+});
+
+pCvs.addEventListener('mouseup', e => {
+  if(!pDraw) return;
+  pDraw=false;
+  if(pTool==='arrow' && pArrow){
+    const ax1=pArrow.x1, ay1=pArrow.y1, ax2=e.clientX, ay2=e.clientY;
+    drawArrowPerm(ax1,ay1,ax2,ay2);
+    pArrow=null;
+  }
+  if(pTool==='pen') pPoints=[];
+  if(pTool==='zoom') zoomEnd(e);
+});
+
+/* ── PEN ────────────────────────────────────────────────── */
+function drawStroke(pts, color, width){
+  if(pts.length<2) return;
+  pCtx.strokeStyle=color;
+  pCtx.lineWidth=width;
+  pCtx.lineCap='round';
+  pCtx.lineJoin='round';
+  pCtx.beginPath();
+  pCtx.moveTo(pts[pts.length-2].x, pts[pts.length-2].y);
+  pCtx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+  pCtx.stroke();
+}
+
+/* ── ARROW permanente com fade ──────────────────────────── */
+function drawArrowPerm(x1,y1,x2,y2){
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  // arrowhead marker
+  const mid = `arrow-${Date.now()}`;
+  g.innerHTML=`
+    <defs>
+      <marker id="${mid}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#f5c518"/>
+      </marker>
+    </defs>
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+      stroke="#f5c518" stroke-width="3" stroke-linecap="round"
+      marker-end="url(#${mid})" opacity="1"
+      style="transition:opacity 1s ease"/>`;
+  pSvg.appendChild(g);
+  // fade depois de 2s, remove depois de 3s
+  setTimeout(()=>{ const ln=g.querySelector('line'); if(ln) ln.style.opacity='0'; }, 2000);
+  setTimeout(()=>{ g.remove(); }, 3100);
+}
+
+/* ── CLEAR ──────────────────────────────────────────────── */
+function clearCanvas(){
+  pCtx.clearRect(0,0,pCvs.width,pCvs.height);
+  // remove setas que sobraram
+  [...pSvg.querySelectorAll('g')].forEach(g=>g.remove());
+}
+
+/* ── SPOTLIGHT ──────────────────────────────────────────── */
+// handled in mousemove above
+
+/* ── ZOOM ───────────────────────────────────────────────── */
+let zRect={x:0,y:0,w:0,h:0};
+const zBox = document.getElementById('pZoomBox');
+
+function zoomStart(e){
+  zRect={x:e.clientX,y:e.clientY,w:0,h:0};
+  zBox.style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0;display:block;`;
+}
+function zoomDrag(e){
+  const w=e.clientX-zRect.x, h=e.clientY-zRect.y;
+  zRect.w=w; zRect.h=h;
+  zBox.style.left   = (w<0?e.clientX:zRect.x)+'px';
+  zBox.style.top    = (h<0?e.clientY:zRect.y)+'px';
+  zBox.style.width  = Math.abs(w)+'px';
+  zBox.style.height = Math.abs(h)+'px';
+}
+function zoomEnd(e){
+  zBox.style.display='none';
+  const rx = Math.min(zRect.x, e.clientX);
+  const ry = Math.min(zRect.y, e.clientY);
+  const rw = Math.abs(zRect.w);
+  const rh = Math.abs(zRect.h);
+  if(rw < 30 || rh < 30) return;
+
+  const scaleX = window.innerWidth  / rw;
+  const scaleY = window.innerHeight / rh;
+  const scale  = Math.min(scaleX, scaleY);
+
+  const zv  = document.getElementById('pZoomView');
+  const zc  = document.getElementById('pZoomContent');
+
+  // Clona o body sem o toolbar e overlays
+  const clone = document.body.cloneNode(true);
+  ['pToolbar','pCanvas','pSvg','pSpot','pZoomBox','pZoomView'].forEach(id=>{
+    const el=clone.querySelector('#'+id); if(el) el.remove();
+  });
+
+  zc.innerHTML='';
+  zc.appendChild(clone);
+  zc.style.width  = window.innerWidth  + 'px';
+  zc.style.height = window.innerHeight + 'px';
+  zc.style.transform = `scale(${scale}) translate(${-rx}px, ${-ry}px)`;
+
+  zv.style.display='block';
+  setTool(null);
+}
+function exitZoom(){
+  document.getElementById('pZoomView').style.display='none';
+}
+</script>
 </body>
 </html>
