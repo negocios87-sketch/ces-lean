@@ -17,6 +17,7 @@
 html{font-size:14px}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
+/* ── TOPBAR ── */
 .topbar{background:var(--navy);padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .tb-left{display:flex;align-items:center;gap:20px}
 .tb-logo{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:var(--gold);letter-spacing:.05em}
@@ -31,49 +32,72 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .tbtn:hover{background:rgba(255,255,255,.1);color:#fff}
 .tbtn:disabled{opacity:.4;cursor:default}
 
-.page{max-width:1160px;margin:0 auto;padding:28px 24px 64px}
+/* ── PAGE ── */
+.page{max-width:1200px;margin:0 auto;padding:28px 24px 64px}
 .ph-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;padding-bottom:18px;border-bottom:1.5px solid var(--border)}
 .ph-eye{font-size:.64rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
 .ph-ttl{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:600;color:var(--navy);line-height:1.1}
 .ph-sub{font-size:.74rem;color:var(--muted);margin-top:5px}
 
+/* ── SECTIONS ── */
 .sec-lbl{font-size:.63rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
 .sec-ttl{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-top:32px}
 
+/* ── KPIs ── */
 .kpi-row{display:grid;gap:10px;margin-bottom:20px}
+.kpi5{grid-template-columns:repeat(5,1fr)}
 .kpi4{grid-template-columns:repeat(4,1fr)}
 .kpi3{grid-template-columns:repeat(3,1fr)}
 .kpi2{grid-template-columns:repeat(2,1fr)}
+.kpi1{grid-template-columns:1fr}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--gold);opacity:0;transition:opacity .3s}
 .kpi:hover::before{opacity:1}
 .kpi .lbl{font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .kpi .val{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:600;color:var(--navy);line-height:1}
 .kpi .sub{font-size:.69rem;color:var(--muted);margin-top:5px}
-.kpi-inline{display:flex;gap:32px;margin-top:8px}
-.ki-item .ki-val{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:600;line-height:1}
-.ki-item .ki-lbl{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
 
+/* ── CHARTS ── */
 .charts-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .charts-1{margin-bottom:16px}
 .ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 14px;box-shadow:var(--shadow)}
 .ccard-ttl{font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .cwrap{position:relative;height:170px}
+.cwrap.md{height:200px}
+.cwrap.sm{height:140px}
 
+/* ── GANHOS TOGGLE ── */
 .gtog-row{display:flex;gap:6px;margin-bottom:16px}
 .gtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
 .gtog:hover{border-color:var(--navy);color:var(--navy)}
 .gtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
 
+/* ── TABELA ── */
+.twrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead{background:var(--navy)}
+thead th{color:rgba(255,255,255,.75);font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left;white-space:nowrap}
+thead th:not(:first-child){text-align:right}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:9px 14px;color:var(--text);white-space:nowrap}
+tbody td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{padding:9px 14px;font-weight:600;color:var(--navy);background:var(--goldP);font-size:.8rem;border-top:1.5px solid var(--border)}
+tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.td-name{font-weight:500;color:var(--navy)}
+
+/* ── MOTIVOS ── */
 .motivos{display:flex;flex-direction:column;gap:9px}
 .motivo-row{display:flex;align-items:center;gap:10px}
-.motivo-name{width:155px;flex-shrink:0;font-size:.77rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motivo-name{width:160px;flex-shrink:0;font-size:.77rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .motivo-track{flex:1;background:var(--border);border-radius:3px;height:5px}
 .motivo-fill{height:5px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .motivo-pct{width:34px;text-align:right;font-size:.69rem;color:var(--muted)}
 .motivo-count{width:26px;text-align:right;font-size:.77rem;font-weight:600;color:var(--navy)}
 
+/* ── ESTADO ── */
 .state-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:14px;color:var(--muted)}
 .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -81,8 +105,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pfooter{margin-top:32px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
 .pfooter span{font-size:.67rem;color:var(--muted)}
 
-@media(max-width:860px){
-  .kpi4,.kpi3{grid-template-columns:1fr 1fr}
+@media(max-width:900px){
+  .kpi5,.kpi4,.kpi3{grid-template-columns:1fr 1fr}
   .charts-2{grid-template-columns:1fr}
 }
 </style>
@@ -116,10 +140,12 @@ let DATA = null;
 let PROD = 'lean';
 const charts = {};
 
+/* ── Formatters ─────────────────────────────────────────── */
 const brl  = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
 const brlK = n => n >= 1000 ? 'R$'+(n/1000).toFixed(0)+'k' : 'R$'+Math.round(n);
 const fmtN = n => Math.round(n).toLocaleString('pt-BR');
 const fmtW = w => { const[,m,d]=w.split('-'); return `${d}/${m}`; };
+const fmtD = d => { const[,,day]=d.split('-'); return String(+day); };
 const fmtM = ym => {
   if(!ym) return '—';
   const[y,mo]=ym.split('-');
@@ -127,25 +153,43 @@ const fmtM = ym => {
 };
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+/* ── Chart utils ─────────────────────────────────────────── */
 Chart.defaults.font = {family:'DM Sans',size:10};
 Chart.defaults.color = '#8a8277';
 const GC = 'rgba(28,32,32,.06)';
 
 function dk(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-function mkBar(id,labels,values,color){
+function mkBar(id,labels,values,color,opts={}){
   dk(id);
   const ctx=document.getElementById(id);if(!ctx)return;
   charts[id]=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[{data:values,backgroundColor:color+'28',borderColor:color,borderWidth:1.5,borderRadius:4}]},
+    data:{labels,datasets:[{data:values,backgroundColor:color+'30',borderColor:color,borderWidth:1.5,borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.parsed.y)}}},
       scales:{
-        x:{grid:{display:false},ticks:{font:{size:9}},border:{color:'transparent'}},
+        x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:opts.maxTicks||20},border:{color:'transparent'}},
         y:{grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true}
       }}});
 }
 
+function mkStackedBar(id,labels,datasets){
+  dk(id);
+  const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{type:'bar',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:{size:9},padding:10,boxWidth:9}},
+        tooltip:{mode:'index',intersect:false}
+      },
+      scales:{
+        x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxTicksLimit:20},border:{color:'transparent'}},
+        y:{stacked:true,grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true}
+      }}});
+}
+
+/* ── Render ──────────────────────────────────────────────── */
 function render(){
   if(!DATA)return;
   const d     = DATA[PROD];
@@ -157,25 +201,77 @@ function render(){
   document.getElementById('tbMeta').textContent = `${mes} · ${ts}`;
 
   const {criados,ganhos,perdidos} = d;
+  const dLabels = criados.porDia.map(x=>fmtD(x.d));
   const wLabels = criados.porSemana.map(x=>fmtW(x.w));
-  const taxaPerda = criados.total>0 ? ((perdidos.total/criados.total)*100).toFixed(0)+'%' : '—';
+
+  /* ── produtos vendidos dos criados ── */
+  const temProdutosVendidos = criados.produtosVendidos && criados.produtosVendidos.length > 0;
+  const tabelaProdutos = temProdutosVendidos ? `
+    <div class="sec-lbl" style="margin-top:16px">Produtos vendidos · dos leads criados esse mês</div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Produto</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
+        <tbody>
+          ${criados.produtosVendidos.map(p=>`
+            <tr>
+              <td class="td-name">${esc(p.nome)}</td>
+              <td>${fmtN(p.t)}</td>
+              <td>${brl(p.rev)}</td>
+              <td>${brl(p.ticket)}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td>Total</td>
+          <td>${fmtN(criados.produtosVendidos.reduce((a,p)=>a+p.t,0))}</td>
+          <td>${brl(criados.produtosVendidos.reduce((a,p)=>a+p.rev,0))}</td>
+          <td>—</td>
+        </tr></tfoot>
+      </table>
+    </div>` : '';
+
+  /* ── origens (ganhos por produto) ── */
+  const temOrigens = ganhos.porProduto.origens && ganhos.porProduto.origens.length > 0;
+  const tabelaOrigens = temOrigens ? `
+    <div class="sec-lbl" style="margin-top:16px">Origem das vendas · campanha de onde veio o lead</div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Campanha de Origem</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
+        <tbody>
+          ${ganhos.porProduto.origens.map(o=>`
+            <tr>
+              <td class="td-name">${esc(o.nome)}</td>
+              <td>${fmtN(o.t)}</td>
+              <td>${brl(o.rev)}</td>
+              <td>${brl(o.ticket)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : '';
 
   document.getElementById('content').innerHTML = `
     <div class="ph-row">
       <div>
         <div class="ph-eye">Board Academy · Inteligência Comercial</div>
         <div class="ph-ttl">${label}</div>
-        <div class="ph-sub">${mes} · Leads e perdas por campanha de origem · Ganhos por produto e campanha</div>
+        <div class="ph-sub">${mes} · Leads e perdas por campanha · Ganhos por produto e campanha</div>
       </div>
     </div>
 
-    <div class="sec-lbl">Leads Criados · campanha de origem</div>
+    <!-- ════ CRIADOS ════════════════════════════════════════ -->
+    <div class="sec-lbl">Leads Criados · campanha de origem · mês atual</div>
 
-    <div class="kpi-row kpi4" style="margin-bottom:20px">
+    <div class="charts-1">
+      <div class="ccard">
+        <div class="ccard-ttl">Volume dia a dia · por status</div>
+        <div class="cwrap md"><canvas id="ch-criados-dia"></canvas></div>
+      </div>
+    </div>
+
+    <div class="kpi-row kpi5">
       <div class="kpi">
-        <div class="lbl">Total Criados</div>
+        <div class="lbl">Total criado no mês</div>
         <div class="val">${fmtN(criados.total)}</div>
-        <div class="sub">${criados.mediaDia} por dia útil</div>
+        <div class="sub">${criados.mediaDia} por dia</div>
       </div>
       <div class="kpi">
         <div class="lbl">Em Aberto</div>
@@ -183,24 +279,25 @@ function render(){
         <div class="sub">${criados.total>0?((criados.status.a/criados.total)*100).toFixed(0):'0'}% do total</div>
       </div>
       <div class="kpi">
-        <div class="lbl">Convertidos</div>
+        <div class="lbl">Ganhos dos criados</div>
         <div class="val" style="color:var(--sage)">${fmtN(criados.status.g)}</div>
-        <div class="sub">${criados.total>0?((criados.status.g/criados.total)*100).toFixed(0):'0'}% do total</div>
+        <div class="sub">leads criados esse mês</div>
       </div>
       <div class="kpi">
-        <div class="lbl">Perdidos</div>
+        <div class="lbl">Perdidos dos criados</div>
         <div class="val" style="color:var(--rust)">${fmtN(criados.status.p)}</div>
-        <div class="sub">${criados.total>0?((criados.status.p/criados.total)*100).toFixed(0):'0'}% do total</div>
+        <div class="sub">leads criados esse mês</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Taxa de Conversão</div>
+        <div class="val">${criados.taxaConv}%</div>
+        <div class="sub">ganhos ÷ criados</div>
       </div>
     </div>
 
-    <div class="charts-1">
-      <div class="ccard">
-        <div class="ccard-ttl">Leads criados por semana · últimas 8 semanas</div>
-        <div class="cwrap"><canvas id="ch-criados"></canvas></div>
-      </div>
-    </div>
+    ${tabelaProdutos}
 
+    <!-- ════ GANHOS ═════════════════════════════════════════ -->
     <div class="sec-ttl">Negócios Ganhos</div>
 
     <div class="gtog-row">
@@ -208,50 +305,66 @@ function render(){
       <button class="gtog"        id="gtog-camp" onclick="switchGanhos('camp')">Por Campanha de origem</button>
     </div>
 
+    <!-- Visão produto -->
     <div id="view-prod">
-      <div class="kpi-row kpi3" style="margin-bottom:16px">
-        <div class="kpi"><div class="lbl">Vendas</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div></div>
+      <div class="kpi-row kpi3">
+        <div class="kpi"><div class="lbl">Vendas (produto)</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div></div>
         <div class="kpi"><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porProduto.receita)}</div><div class="sub">${brl(ganhos.porProduto.receita)}</div></div>
         <div class="kpi"><div class="lbl">Ticket Médio</div><div class="val">${ganhos.porProduto.ticket>0?brlK(ganhos.porProduto.ticket):'—'}</div><div class="sub">por fechamento</div></div>
       </div>
-      <div class="charts-1">
+      <div class="charts-2">
+        <div class="ccard">
+          <div class="ccard-ttl">Vendas por dia · produto vendido</div>
+          <div class="cwrap"><canvas id="ch-gp-dia"></canvas></div>
+        </div>
         <div class="ccard">
           <div class="ccard-ttl">Vendas por semana · produto vendido</div>
-          <div class="cwrap"><canvas id="ch-ganhos-prod"></canvas></div>
+          <div class="cwrap"><canvas id="ch-gp-sem"></canvas></div>
         </div>
       </div>
+      ${tabelaOrigens}
     </div>
 
+    <!-- Visão campanha -->
     <div id="view-camp" style="display:none">
-      <div class="kpi-row kpi3" style="margin-bottom:16px">
-        <div class="kpi"><div class="lbl">Vendas</div><div class="val">${fmtN(ganhos.porCampanha.total)}</div><div class="sub">negócios ganhos</div></div>
+      <div class="kpi-row kpi3">
+        <div class="kpi"><div class="lbl">Vendas (campanha)</div><div class="val">${fmtN(ganhos.porCampanha.total)}</div><div class="sub">negócios ganhos</div></div>
         <div class="kpi"><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porCampanha.receita)}</div><div class="sub">${brl(ganhos.porCampanha.receita)}</div></div>
         <div class="kpi"><div class="lbl">Ticket Médio</div><div class="val">${ganhos.porCampanha.ticket>0?brlK(ganhos.porCampanha.ticket):'—'}</div><div class="sub">por fechamento</div></div>
       </div>
-      <div class="charts-1">
+      <div class="charts-2">
+        <div class="ccard">
+          <div class="ccard-ttl">Vendas por dia · campanha de origem</div>
+          <div class="cwrap"><canvas id="ch-gc-dia"></canvas></div>
+        </div>
         <div class="ccard">
           <div class="ccard-ttl">Vendas por semana · campanha de origem</div>
-          <div class="cwrap"><canvas id="ch-ganhos-camp"></canvas></div>
+          <div class="cwrap"><canvas id="ch-gc-sem"></canvas></div>
         </div>
       </div>
     </div>
 
+    <!-- ════ PERDIDOS ════════════════════════════════════════ -->
     <div class="sec-ttl">Negócios Perdidos · campanha de origem</div>
 
-    <div class="kpi-row kpi2" style="margin-bottom:16px">
-      <div class="kpi"><div class="lbl">Total Perdidos</div><div class="val">${fmtN(perdidos.total)}</div><div class="sub">${perdidos.mediaDia} por dia útil</div></div>
-      <div class="kpi"><div class="lbl">Taxa de Perda</div><div class="val">${taxaPerda}</div><div class="sub">perdidos ÷ criados no mês</div></div>
+    <div class="kpi-row kpi1">
+      <div class="kpi"><div class="lbl">Total Perdidos no Mês</div><div class="val">${fmtN(perdidos.total)}</div><div class="sub">${perdidos.mediaDia} por dia</div></div>
     </div>
 
     <div class="charts-2">
       <div class="ccard">
-        <div class="ccard-ttl">Perdidos por semana · últimas 8 semanas</div>
-        <div class="cwrap"><canvas id="ch-perdidos"></canvas></div>
+        <div class="ccard-ttl">Perdidos por dia · mês atual</div>
+        <div class="cwrap"><canvas id="ch-perd-dia"></canvas></div>
       </div>
       <div class="ccard">
-        <div class="ccard-ttl">Top motivos de perda · mês atual</div>
-        <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
+        <div class="ccard-ttl">Perdidos por semana · últimas 8 semanas</div>
+        <div class="cwrap"><canvas id="ch-perd-sem"></canvas></div>
       </div>
+    </div>
+
+    <div class="ccard" style="margin-bottom:16px">
+      <div class="ccard-ttl">Top motivos de perda · mês atual</div>
+      <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
     </div>
 
     <div class="pfooter">
@@ -260,7 +373,7 @@ function render(){
     </div>
   `;
 
-  /* Motivos */
+  /* ── Motivos ── */
   const motEl = document.getElementById('motivos-list');
   motEl.innerHTML = perdidos.topMotivos.length
     ? perdidos.topMotivos.map(m=>`
@@ -270,15 +383,30 @@ function render(){
           <div class="motivo-pct">${m.pct}%</div>
           <div class="motivo-count">${m.c}</div>
         </div>`).join('')
-    : '<div style="color:var(--muted);font-size:.8rem">Sem dados no período.</div>';
+    : '<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados no período.</div>';
 
-  /* Charts */
-  mkBar('ch-criados',     wLabels, criados.porSemana.map(x=>x.v), color);
-  mkBar('ch-ganhos-prod', wLabels, ganhos.porProduto.porSemana.map(x=>x.v), color);
-  mkBar('ch-ganhos-camp', wLabels, ganhos.porCampanha.porSemana.map(x=>x.v), color);
-  mkBar('ch-perdidos',    wLabels, perdidos.porSemana.map(x=>x.v), '#c0533a');
+  /* ── Charts ── */
+  // Criados empilhado por dia
+  mkStackedBar('ch-criados-dia', dLabels, [
+    { label:'Aberto',  data: criados.porDia.map(x=>x.a), backgroundColor:'#1c2b3a99', borderWidth:0, borderRadius:2 },
+    { label:'Ganho',   data: criados.porDia.map(x=>x.g), backgroundColor:'#4a7c6a99', borderWidth:0, borderRadius:2 },
+    { label:'Perdido', data: criados.porDia.map(x=>x.p), backgroundColor:'#c0533a99', borderWidth:0, borderRadius:2 },
+  ]);
+
+  // Ganhos por produto
+  mkBar('ch-gp-dia', dLabels, ganhos.porProduto.porDia.map(x=>x.v), color, {maxTicks:20});
+  mkBar('ch-gp-sem', wLabels, ganhos.porProduto.porSemana.map(x=>x.v), color);
+
+  // Ganhos por campanha
+  mkBar('ch-gc-dia', dLabels, ganhos.porCampanha.porDia.map(x=>x.v), color, {maxTicks:20});
+  mkBar('ch-gc-sem', wLabels, ganhos.porCampanha.porSemana.map(x=>x.v), color);
+
+  // Perdidos
+  mkBar('ch-perd-dia', dLabels, perdidos.porDia.map(x=>x.v), '#c0533a', {maxTicks:20});
+  mkBar('ch-perd-sem', wLabels, perdidos.porSemana.map(x=>x.v), '#c0533a');
 }
 
+/* ── Toggle produto ──────────────────────────────────────── */
 function setProduct(p){
   PROD=p;
   document.getElementById('togLean').classList.toggle('active',p==='lean');
@@ -286,20 +414,16 @@ function setProduct(p){
   if(DATA) render();
 }
 
+/* ── Toggle ganhos ───────────────────────────────────────── */
 function switchGanhos(view){
   const isProd=view==='prod';
   document.getElementById('view-prod').style.display=isProd?'block':'none';
   document.getElementById('view-camp').style.display=isProd?'none':'block';
   document.getElementById('gtog-prod').classList.toggle('active', isProd);
   document.getElementById('gtog-camp').classList.toggle('active',!isProd);
-  if(!isProd){
-    const color=PROD==='lean'?'#b8873f':'#2d7da8';
-    mkBar('ch-ganhos-camp',
-      DATA[PROD].criados.porSemana.map(x=>fmtW(x.w)),
-      DATA[PROD].ganhos.porCampanha.porSemana.map(x=>x.v),color);
-  }
 }
 
+/* ── Load ────────────────────────────────────────────────── */
 async function loadData(){
   const err=document.getElementById('errBanner');
   err.style.display='none';
