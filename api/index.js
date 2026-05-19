@@ -11,25 +11,6 @@ const FILTER_PERDIDOS = process.env.FILTER_PERDIDOS   || '1647390';
 const PRODUCT_FIELD   = '8bdce76ba66f0fed0280918a4845190c92899ed5';
 const CAMPAIGN_FIELD  = 'ae03fa460a108b8cdfa87e97ebca24379d2779d6';
 
-const FIELD_RENDA         = 'c95b2c453828853409c0a1f5d5f1a6ab30eebebf';
-const FIELD_CARGO         = '718c8aba81211c883ffd9f4616f75ee22a10b2da';
-const FIELD_IDADE         = '83d18fca9a1f15041acebd03956039213f47c75a';
-const FIELD_ESCOLARIDADE  = '93ce10ba72f6b8aab8a4d18d699ddeb36b12ab1f';
-
-const SCORE_RULES_URL = process.env.SCORE_RULES_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=422517996&single=true&output=csv';
-
-const SCORE_DEFAULTS = { renda:1.1, cargo:0.9, idade:0.5, escolaridade:1.0 };
-const SCORE_FAIXAS = [
-  {label:'De 2 a 2,9', min:2, max:3},
-  {label:'De 3 a 3,9', min:3, max:4},
-  {label:'De 4 a 4,9', min:4, max:5},
-  {label:'De 5 a 5,9', min:5, max:6},
-  {label:'De 6 a 6,9', min:6, max:7},
-  {label:'De 7 a 7,9', min:7, max:8},
-  {label:'De 8 a 8,9', min:8, max:9},
-  {label:'De 9 a 10', min:9, max:10.000001},
-];
-
 const LEAN_IDS = new Set(['22395618474','22402104677','22406191339']);
 const CES_IDS  = new Set(['22734871401','23367012467']);
 
@@ -58,105 +39,31 @@ function classifyOrigem(v) {
   return 'Outras Origens';
 }
 
-function normalizarTexto(v) {
-  return String(v || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-}
-
-function parseCsvLine(line, delimiter) {
-  const out = []; let cur = ''; let inQuotes = false;
-  for (let i=0; i<line.length; i++) {
-    const ch = line[i], next = line[i+1];
-    if (ch === '"' && inQuotes && next === '"') { cur += '"'; i++; continue; }
-    if (ch === '"') { inQuotes = !inQuotes; continue; }
-    if (ch === delimiter && !inQuotes) { out.push(cur); cur = ''; continue; }
-    cur += ch;
-  }
-  out.push(cur);
-  return out.map(x => x.trim());
-}
-
-function parsePontuacao(v) {
-  const n = parseFloat(String(v || '').replace(',', '.'));
-  return Number.isFinite(n) ? n : null;
-}
-
-async function carregarRegrasScore() {
-  const r = await fetch(SCORE_RULES_URL, { cache: 'no-store' });
-  if (!r.ok) throw new Error(`Erro ao carregar regras de score: ${r.status}`);
-
-  const txt = await r.text();
-  const linhas = txt.split(/\r?\n/).filter(l => l.trim());
-  if (!linhas.length) return [];
-
-  const delimiter = linhas[0].includes('\t') ? '\t' : ',';
-
-  return linhas.slice(1).map(line => {
-    const cols = parseCsvLine(line, delimiter);
-    const tipo = normalizarTexto(cols[0]);
-    const contem = String(cols[1] || '').trim();
-    const pontuacao = parsePontuacao(cols[2]);
-    return { tipo, contem, contemNorm: normalizarTexto(contem), pontuacao };
-  }).filter(r => r.tipo && r.pontuacao !== null);
-}
-
-function scorePorTipo(tipo, texto, regras) {
-  const textoNorm = normalizarTexto(texto);
-  if (!textoNorm) return SCORE_DEFAULTS[tipo];
-
-  const match = regras.find(r =>
-    r.tipo === tipo &&
-    r.contemNorm &&
-    textoNorm.includes(r.contemNorm)
-  );
-
-  return match ? match.pontuacao : SCORE_DEFAULTS[tipo];
-}
-
-function calcularScoreLead(deal, regras) {
-  const renda = scorePorTipo('renda', deal[FIELD_RENDA], regras);
-  const cargo = scorePorTipo('cargo', deal[FIELD_CARGO], regras);
-  const idade = scorePorTipo('idade', deal[FIELD_IDADE], regras);
-  const escolaridade = scorePorTipo('escolaridade', deal[FIELD_ESCOLARIDADE], regras);
-
-  return +(renda + cargo + idade + escolaridade).toFixed(2);
-}
-
-function faixaScore(score) {
-  const f = SCORE_FAIXAS.find(x => score >= x.min && score < x.max);
-  return f ? f.label : null;
-}
-
-function emptyScoreFaixas() {
-  return Object.fromEntries(SCORE_FAIXAS.map(f => [f.label, 0]));
-}
-
 const toYM  = d => d ? String(d).substring(0,7) : null;
 const toYMD = d => d ? String(d).substring(0,10) : null;
 
+// Semana: Quinta → Quarta
 function weekStart(dateStr) {
   if (!dateStr) return null;
   const d = new Date(String(dateStr).substring(0,10)+'T00:00:00Z');
-  const day = d.getUTCDay();
-  const daysFromThu = (day - 4 + 7) % 7;
+  const day = d.getUTCDay(); // 0=Dom,1=Seg,...,4=Qui,5=Sex,6=Sab
+  const daysFromThu = (day - 4 + 7) % 7; // dias desde a última quinta
   d.setUTCDate(d.getUTCDate() - daysFromThu);
   return d.toISOString().substring(0,10);
 }
 
+// Retorna as últimas N semanas COMPLETAS (Qui→Qua), ignorando a semana atual
 function getWeeks(n=8) {
   const now = new Date();
   const day = now.getUTCDay();
+  // Quinta da semana atual
   const daysFromThu = (day - 4 + 7) % 7;
   const currThu = new Date(now);
   currThu.setUTCDate(now.getUTCDate() - daysFromThu);
   currThu.setUTCHours(0,0,0,0);
-
+  // Base = quinta da última semana COMPLETA
   const base = new Date(currThu);
   base.setUTCDate(currThu.getUTCDate() - 7);
-
   const weeks = [];
   for (let i=n-1;i>=0;i--) {
     const d = new Date(base);
@@ -173,47 +80,38 @@ function addMonths(ym, n) {
 }
 
 const BASE = `https://${ORG}.pipedrive.com/api/v1`;
-
 async function pipeGet(ep) {
   const sep = ep.includes('?')?'&':'?';
   const r = await fetch(`${BASE}${ep}${sep}api_token=${API_TOKEN}`);
   if (!r.ok) throw new Error(`Pipedrive ${r.status} → ${ep}`);
   return r.json();
 }
-
 async function fetchByFilter(filterId) {
   const all=[]; let start=0;
-
   while(true) {
     const j = await pipeGet(`/deals?filter_id=${filterId}&status=all&limit=500&start=${start}`);
     (j.data||[]).forEach(d=>all.push(d));
-
     if (!j.additional_data?.pagination?.more_items_in_collection) break;
     start+=500;
   }
-
   return all;
 }
 
 app.get('/api/report', async (req,res) => {
-  if (!API_TOKEN) {
-    return res.status(500).json({ok:false,error:'PIPEDRIVE_TOKEN não configurado.'});
-  }
-
+  if (!API_TOKEN) return res.status(500).json({ok:false,error:'PIPEDRIVE_TOKEN não configurado.'});
   try {
-    const [dealsCriados,dealsGanhos,dealsPerdidos,regrasScore] = await Promise.all([
+    const [dealsCriados,dealsGanhos,dealsPerdidos] = await Promise.all([
       fetchByFilter(FILTER_CRIADOS),
       fetchByFilter(FILTER_GANHOS),
       fetchByFilter(FILTER_PERDIDOS),
-      carregarRegrasScore(),
     ]);
 
-    const now     = new Date();
-    const curYM   = now.toISOString().substring(0,7);
+    const now    = new Date();
+    const curYM  = now.toISOString().substring(0,7);
     const prevYM  = addMonths(curYM,-1);
     const prev2YM = addMonths(curYM,-2);
-    const weeks   = getWeeks(8);
-    const wSet    = new Set(weeks);
+    const weeks  = getWeeks(8);
+    const wSet   = new Set(weeks);
 
     const year        = parseInt(curYM.split('-')[0]);
     const month       = parseInt(curYM.split('-')[1]);
@@ -221,336 +119,186 @@ app.get('/api/report', async (req,res) => {
     const allDays     = Array.from({length:daysInMonth},(_,i)=>`${curYM}-${String(i+1).padStart(2,'0')}`);
 
     const empty = () => ({
-      criados: {
-        mes:{
-          t:0,
-          dia:{},
-          diaA:{},
-          diaG:{},
-          diaP:{},
-          st:{a:0,g:0,p:0},
-          produtosVendidos:{},
-          scoreFaixas:emptyScoreFaixas()
-        },
-        sem:{}
-      },
+      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[]}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{}}, sem:{} },
     });
-
     const D = {LEAN:empty(),CES:empty()};
 
+    // ── CRIADOS ───────────────────────────────────────────────
     for (const deal of dealsCriados) {
       const camp = classifyCampaign(deal[CAMPAIGN_FIELD]);
-      if (!camp || !deal.add_time) continue;
-
-      const _ym = toYM(deal.add_time);
-      const _w  = weekStart(deal.add_time);
-      const dc  = D[camp].criados;
-
-      if (_ym === curYM) {
-        const _d = toYMD(deal.add_time);
-
+      if (!camp||!deal.add_time) continue;
+      const _ym=toYM(deal.add_time), _w=weekStart(deal.add_time);
+      const dc=D[camp].criados;
+      if (_ym===curYM) {
+        const _d=toYMD(deal.add_time);
         dc.mes.t++;
-        dc.mes.dia[_d] = (dc.mes.dia[_d] || 0) + 1;
-
-        if (deal.status === 'open') {
-          dc.mes.st.a++;
-          dc.mes.diaA[_d] = (dc.mes.diaA[_d] || 0) + 1;
-        }
-
-        if (deal.status === 'won') {
-          dc.mes.st.g++;
-          dc.mes.diaG[_d] = (dc.mes.diaG[_d] || 0) + 1;
-        }
-
-        if (deal.status === 'lost') {
-          dc.mes.st.p++;
-          dc.mes.diaP[_d] = (dc.mes.diaP[_d] || 0) + 1;
-        }
-
-        const score = calcularScoreLead(deal, regrasScore);
-        const faixa = faixaScore(score);
-
-        if (faixa) {
-          dc.mes.scoreFaixas[faixa] = (dc.mes.scoreFaixas[faixa] || 0) + 1;
-        }
-
-        const val = parseFloat(deal.value || 0);
-        const prods = classifyProduct(deal[PRODUCT_FIELD]);
-
-        if (deal.status === 'won' && val > 0 && prods.length) {
+        dc.mes.dia[_d]=(dc.mes.dia[_d]||0)+1;
+        if (deal.status==='open')  {dc.mes.st.a++;dc.mes.diaA[_d]=(dc.mes.diaA[_d]||0)+1;}
+        if (deal.status==='won')   {dc.mes.st.g++;dc.mes.diaG[_d]=(dc.mes.diaG[_d]||0)+1;}
+        if (deal.status==='lost')  {dc.mes.st.p++;dc.mes.diaP[_d]=(dc.mes.diaP[_d]||0)+1;}
+        const val=parseFloat(deal.value||0);
+        const prods=classifyProduct(deal[PRODUCT_FIELD]);
+        if (deal.status==='won'&&val>0&&prods.length) {
           for (const p of prods) {
-            const nome = p === 'LEAN' ? 'Lean Governance' : 'CES';
-
-            if (!dc.mes.produtosVendidos[nome]) {
-              dc.mes.produtosVendidos[nome] = {t:0,rev:0,deals:[]};
-            }
-
-            dc.mes.produtosVendidos[nome].t++;
-            dc.mes.produtosVendidos[nome].rev += val;
-
+            const nome=p==='LEAN'?'Lean Governance':'CES';
+            if (!dc.mes.produtosVendidos[nome]) dc.mes.produtosVendidos[nome]={t:0,rev:0,deals:[]};
+            dc.mes.produtosVendidos[nome].t++;dc.mes.produtosVendidos[nome].rev+=val;
             dc.mes.produtosVendidos[nome].deals.push({
-              campanha: String(deal[CAMPAIGN_FIELD] || '—').trim(),
-              dataGanho: deal.won_time ? deal.won_time.substring(0,10) : '—',
-              proprietario: deal.owner_name || (deal.user_id && deal.user_id.name) || '—',
+              campanha: String(deal[CAMPAIGN_FIELD]||'—').trim(),
+              dataGanho: deal.won_time?deal.won_time.substring(0,10):'—',
+              proprietario: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
               valor: val,
-              produto: String(deal[PRODUCT_FIELD] || '—'),
+              produto: String(deal[PRODUCT_FIELD]||'—'),
             });
           }
         }
       }
-
-      if (wSet.has(_w)) {
-        dc.sem[_w] = (dc.sem[_w] || 0) + 1;
-      }
+      if (wSet.has(_w)) dc.sem[_w]=(dc.sem[_w]||0)+1;
     }
 
+    // ── GANHOS ───────────────────────────────────────────────
     for (const deal of dealsGanhos) {
-      if (deal.status !== 'won' || !deal.won_time) continue;
-
-      const val = parseFloat(deal.value || 0);
-      if (val <= 0) continue;
-
-      const prods  = classifyProduct(deal[PRODUCT_FIELD]);
-      const camp   = classifyCampaign(deal[CAMPAIGN_FIELD]);
-      const origem = classifyOrigem(deal[CAMPAIGN_FIELD]);
-
+      if (deal.status!=='won'||!deal.won_time) continue;
+      const val=parseFloat(deal.value||0);
+      if (val<=0) continue;
+      const prods=classifyProduct(deal[PRODUCT_FIELD]);
+      const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
+      const origem=classifyOrigem(deal[CAMPAIGN_FIELD]);
       if (!prods.length) continue;
+      const _ym=toYM(deal.won_time),_w=weekStart(deal.won_time),_d=toYMD(deal.won_time);
 
-      const _ym = toYM(deal.won_time);
-      const _w  = weekStart(deal.won_time);
-      const _d  = toYMD(deal.won_time);
-
-      const addYM = toYM(deal.add_time);
+      // origem temporal (quando o lead foi criado)
+      const addYM=toYM(deal.add_time);
       let tempCat;
-
-      if (addYM === curYM) tempCat = 'cur';
-      else if (addYM === prevYM) tempCat = 'prev';
-      else if (addYM === prev2YM) tempCat = 'prev2';
-      else tempCat = 'antes';
+      if (addYM===curYM)  tempCat='cur';
+      else if (addYM===prevYM)  tempCat='prev';
+      else if (addYM===prev2YM) tempCat='prev2';
+      else tempCat='antes';
 
       for (const p of prods) {
-        const g = D[p].ganhos;
-
-        if (_ym === curYM) {
-          g.mes.t++;
-          g.mes.rev += val;
-
-          if (!g.mes.dia[_d]) g.mes.dia[_d] = {t:0,r:0};
-
-          g.mes.dia[_d].t++;
-          g.mes.dia[_d].r += val;
-
-          if (!g.mes.origens[origem]) {
-            g.mes.origens[origem] = {t:0,rev:0,deals:[]};
-          }
-
-          g.mes.origens[origem].t++;
-          g.mes.origens[origem].rev += val;
-
+        const g=D[p].ganhos;
+        if (_ym===curYM) {
+          g.mes.t++;g.mes.rev+=val;
+          if (!g.mes.dia[_d]) g.mes.dia[_d]={t:0,r:0};
+          g.mes.dia[_d].t++;g.mes.dia[_d].r+=val;
+          if (!g.mes.origens[origem]) g.mes.origens[origem]={t:0,rev:0,deals:[]};
+          g.mes.origens[origem].t++;g.mes.origens[origem].rev+=val;
           g.mes.origens[origem].deals.push({
-            campanha: String(deal[CAMPAIGN_FIELD] || '—').trim(),
-            dataGanho: deal.won_time ? deal.won_time.substring(0,10) : '—',
-            proprietario: deal.owner_name || (deal.user_id && deal.user_id.name) || '—',
+            campanha: String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho: deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
             valor: val,
-            produto: String(deal[PRODUCT_FIELD] || '—'),
+            produto: String(deal[PRODUCT_FIELD]||'—'),
           });
-
-          g.mes.origTemporal[tempCat] = (g.mes.origTemporal[tempCat] || 0) + 1;
+          g.mes.origTemporal[tempCat]=(g.mes.origTemporal[tempCat]||0)+1;
         }
-
-        if (wSet.has(_w)) {
-          if (!g.sem[_w]) g.sem[_w] = {t:0,r:0};
-          g.sem[_w].t++;
-          g.sem[_w].r += val;
-        }
+        if (wSet.has(_w)) {if (!g.sem[_w]) g.sem[_w]={t:0,r:0};g.sem[_w].t++;g.sem[_w].r+=val;}
       }
 
       if (camp) {
-        const gc = D[camp].camp;
-
-        if (_ym === curYM) {
-          gc.mes.t++;
-          gc.mes.rev += val;
-
-          if (!gc.mes.dia[_d]) gc.mes.dia[_d] = {t:0,r:0};
-
-          gc.mes.dia[_d].t++;
-          gc.mes.dia[_d].r += val;
-
+        const gc=D[camp].camp;
+        if (_ym===curYM) {
+          gc.mes.t++;gc.mes.rev+=val;
+          if (!gc.mes.dia[_d]) gc.mes.dia[_d]={t:0,r:0};
+          gc.mes.dia[_d].t++;gc.mes.dia[_d].r+=val;
           gc.mes.deals.push({
-            campanha: String(deal[CAMPAIGN_FIELD] || '—').trim(),
-            dataGanho: deal.won_time ? deal.won_time.substring(0,10) : '—',
-            proprietario: deal.owner_name || (deal.user_id && deal.user_id.name) || '—',
+            campanha: String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho: deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
             valor: val,
-            produto: String(deal[PRODUCT_FIELD] || '—'),
+            produto: String(deal[PRODUCT_FIELD]||'—'),
           });
         }
-
-        if (wSet.has(_w)) {
-          if (!gc.sem[_w]) gc.sem[_w] = {t:0,r:0};
-          gc.sem[_w].t++;
-          gc.sem[_w].r += val;
-        }
+        if (wSet.has(_w)) {if (!gc.sem[_w]) gc.sem[_w]={t:0,r:0};gc.sem[_w].t++;gc.sem[_w].r+=val;}
       }
     }
 
+    // ── PERDIDOS ─────────────────────────────────────────────
     for (const deal of dealsPerdidos) {
-      if (deal.status !== 'lost' || !deal.lost_time) continue;
-
-      const camp = classifyCampaign(deal[CAMPAIGN_FIELD]);
+      if (deal.status!=='lost'||!deal.lost_time) continue;
+      const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
       if (!camp) continue;
+      const _ym=toYM(deal.lost_time),_w=weekStart(deal.lost_time);
+      const dp=D[camp].perdidos;
 
-      const _ym = toYM(deal.lost_time);
-      const _w  = weekStart(deal.lost_time);
-      const dp  = D[camp].perdidos;
-
-      const addYM = toYM(deal.add_time);
+      const addYM=toYM(deal.add_time);
       let tempCat;
+      if (addYM===curYM)  tempCat='cur';
+      else if (addYM===prevYM)  tempCat='prev';
+      else if (addYM===prev2YM) tempCat='prev2';
+      else tempCat='antes';
 
-      if (addYM === curYM) tempCat = 'cur';
-      else if (addYM === prevYM) tempCat = 'prev';
-      else if (addYM === prev2YM) tempCat = 'prev2';
-      else tempCat = 'antes';
-
-      if (_ym === curYM) {
-        const _d = toYMD(deal.lost_time);
-        const motivo = deal.lost_reason?.trim() || 'Não informado';
-
+      if (_ym===curYM) {
+        const _d=toYMD(deal.lost_time);
+        const motivo=deal.lost_reason?.trim()||'Não informado';
         dp.mes.t++;
-        dp.mes.dia[_d] = (dp.mes.dia[_d] || 0) + 1;
-        dp.mes.motivos[motivo] = (dp.mes.motivos[motivo] || 0) + 1;
-        dp.mes.origTemporal[tempCat] = (dp.mes.origTemporal[tempCat] || 0) + 1;
+        dp.mes.dia[_d]=(dp.mes.dia[_d]||0)+1;
+        dp.mes.motivos[motivo]=(dp.mes.motivos[motivo]||0)+1;
+        dp.mes.origTemporal[tempCat]=(dp.mes.origTemporal[tempCat]||0)+1;
       }
-
-      if (wSet.has(_w)) {
-        dp.sem[_w] = (dp.sem[_w] || 0) + 1;
-      }
+      if (wSet.has(_w)) dp.sem[_w]=(dp.sem[_w]||0)+1;
     }
 
+    // ── Serialização ──────────────────────────────────────────
     const MES_NOMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-
-    const ymLabel = ym => {
-      const [y,m] = ym.split('-');
-      return MES_NOMES[+m-1] + '/' + y.slice(2);
-    };
+    const ymLabel = ym => { const[y,m]=ym.split('-'); return MES_NOMES[+m-1]+'/'+y.slice(2); };
 
     const origTemporalSer = (ot, total) => [
-      { label:`Mês atual (${ymLabel(curYM)})`, v:ot.cur || 0, pct:total > 0 ? Math.round((ot.cur || 0) / total * 100) : 0 },
-      { label:ymLabel(prevYM), v:ot.prev || 0, pct:total > 0 ? Math.round((ot.prev || 0) / total * 100) : 0 },
-      { label:ymLabel(prev2YM), v:ot.prev2 || 0, pct:total > 0 ? Math.round((ot.prev2 || 0) / total * 100) : 0 },
-      { label:`Antes de ${ymLabel(prev2YM)}`, v:ot.antes || 0, pct:total > 0 ? Math.round((ot.antes || 0) / total * 100) : 0 },
+      { label:`Mês atual (${ymLabel(curYM)})`, v:ot.cur||0,  pct:total>0?Math.round((ot.cur||0)/total*100):0 },
+      { label:ymLabel(prevYM),                  v:ot.prev||0, pct:total>0?Math.round((ot.prev||0)/total*100):0 },
+      { label:ymLabel(prev2YM),                 v:ot.prev2||0,pct:total>0?Math.round((ot.prev2||0)/total*100):0 },
+      { label:`Antes de ${ymLabel(prev2YM)}`,   v:ot.antes||0,pct:total>0?Math.round((ot.antes||0)/total*100):0 },
     ];
 
     const ser = p => ({
       criados: {
-        total: p.criados.mes.t,
-        mediaDia: allDays.length ? +(p.criados.mes.t / allDays.length).toFixed(1) : 0,
-        status: p.criados.mes.st,
-        taxaConv: p.criados.mes.t > 0 ? +((p.criados.mes.st.g / p.criados.mes.t) * 100).toFixed(1) : 0,
-        porDia: allDays.map(d => ({
-          d,
-          v:p.criados.mes.dia[d] || 0,
-          a:p.criados.mes.diaA[d] || 0,
-          g:p.criados.mes.diaG[d] || 0,
-          p:p.criados.mes.diaP[d] || 0
-        })),
-        porSemana: weeks.map(w => ({w,v:p.criados.sem[w] || 0})),
-        produtosVendidos: Object.entries(p.criados.mes.produtosVendidos)
-          .sort((a,b)=>b[1].rev-a[1].rev)
-          .map(([nome,x])=>({
-            nome,
-            t:x.t,
-            rev:x.rev,
-            ticket:x.t ? x.rev/x.t : 0
-          })),
-        scoreFaixas: SCORE_FAIXAS.map(f => {
-          const v = p.criados.mes.scoreFaixas[f.label] || 0;
-          return {
-            label:f.label,
-            v,
-            pct:p.criados.mes.t ? +((v / p.criados.mes.t) * 100).toFixed(1) : 0
-          };
-        }),
+        total:   p.criados.mes.t,
+        mediaDia:allDays.length?+(p.criados.mes.t/allDays.length).toFixed(1):0,
+        status:  p.criados.mes.st,
+        taxaConv:p.criados.mes.t>0?+((p.criados.mes.st.g/p.criados.mes.t)*100).toFixed(1):0,
+        porDia:  allDays.map(d=>({d,v:p.criados.mes.dia[d]||0,a:p.criados.mes.diaA[d]||0,g:p.criados.mes.diaG[d]||0,p:p.criados.mes.diaP[d]||0})),
+        porSemana:weeks.map(w=>({w,v:p.criados.sem[w]||0})),
+        produtosVendidos:Object.entries(p.criados.mes.produtosVendidos).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0})),
       },
       ganhos: {
         porProduto: {
-          total: p.ganhos.mes.t,
+          total:  p.ganhos.mes.t,
           receita:p.ganhos.mes.rev,
-          ticket: p.ganhos.mes.t ? p.ganhos.mes.rev / p.ganhos.mes.t : 0,
-          porDia: allDays.map(d => ({
-            d,
-            v:p.ganhos.mes.dia[d]?.t || 0,
-            r:p.ganhos.mes.dia[d]?.r || 0
-          })),
-          porSemana: weeks.map(w => ({
-            w,
-            v:p.ganhos.sem[w]?.t || 0,
-            r:p.ganhos.sem[w]?.r || 0
-          })),
-          origens: Object.entries(p.ganhos.mes.origens)
-            .sort((a,b)=>b[1].rev-a[1].rev)
-            .map(([nome,x])=>({
-              nome,
-              t:x.t,
-              rev:x.rev,
-              ticket:x.t ? x.rev/x.t : 0,
-              deals:x.deals
-            })),
-          origemTemporal: origTemporalSer(p.ganhos.mes.origTemporal,p.ganhos.mes.t),
+          ticket: p.ganhos.mes.t?p.ganhos.mes.rev/p.ganhos.mes.t:0,
+          porDia: allDays.map(d=>({d,v:p.ganhos.mes.dia[d]?.t||0,r:p.ganhos.mes.dia[d]?.r||0})),
+          porSemana:weeks.map(w=>({w,v:p.ganhos.sem[w]?.t||0,r:p.ganhos.sem[w]?.r||0})),
+          origens:Object.entries(p.ganhos.mes.origens).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
+          origemTemporal:origTemporalSer(p.ganhos.mes.origTemporal,p.ganhos.mes.t),
         },
         porCampanha: {
-          total: p.camp.mes.t,
+          total:  p.camp.mes.t,
           receita:p.camp.mes.rev,
-          ticket: p.camp.mes.t ? p.camp.mes.rev / p.camp.mes.t : 0,
-          porDia: allDays.map(d => ({
-            d,
-            v:p.camp.mes.dia[d]?.t || 0,
-            r:p.camp.mes.dia[d]?.r || 0
-          })),
-          porSemana: weeks.map(w => ({
-            w,
-            v:p.camp.sem[w]?.t || 0,
-            r:p.camp.sem[w]?.r || 0
-          })),
-          origemTemporal: origTemporalSer(p.ganhos.mes.origTemporal,p.camp.mes.t),
+          ticket: p.camp.mes.t?p.camp.mes.rev/p.camp.mes.t:0,
+          porDia: allDays.map(d=>({d,v:p.camp.mes.dia[d]?.t||0,r:p.camp.mes.dia[d]?.r||0})),
+          porSemana:weeks.map(w=>({w,v:p.camp.sem[w]?.t||0,r:p.camp.sem[w]?.r||0})),
+          origemTemporal:origTemporalSer(p.ganhos.mes.origTemporal,p.camp.mes.t),
+          deals:p.camp.mes.deals,
         },
       },
       perdidos: {
-        total: p.perdidos.mes.t,
-        mediaDia: allDays.length ? +(p.perdidos.mes.t / allDays.length).toFixed(1) : 0,
-        porDia: allDays.map(d => ({d,v:p.perdidos.mes.dia[d] || 0})),
-        porSemana: weeks.map(w => ({w,v:p.perdidos.sem[w] || 0})),
-        topMotivos: Object.entries(p.perdidos.mes.motivos)
-          .sort((a,b)=>b[1]-a[1])
-          .slice(0,10)
-          .map(([m,c])=>({
-            m,
-            c,
-            pct:p.perdidos.mes.t ? Math.round(c / p.perdidos.mes.t * 100) : 0
-          })),
-        origemTemporal: origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
+        total:    p.perdidos.mes.t,
+        mediaDia: allDays.length?+(p.perdidos.mes.t/allDays.length).toFixed(1):0,
+        porDia:   allDays.map(d=>({d,v:p.perdidos.mes.dia[d]||0})),
+        porSemana:weeks.map(w=>({w,v:p.perdidos.sem[w]||0})),
+        topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
+        origemTemporal:origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
       },
     });
 
-    res.json({
-      ok:true,
-      mes:curYM,
-      updatedAt:new Date().toISOString(),
-      lean:ser(D.LEAN),
-      ces:ser(D.CES)
-    });
-
+    res.json({ok:true,mes:curYM,updatedAt:new Date().toISOString(),lean:ser(D.LEAN),ces:ser(D.CES)});
   } catch(e) {
     console.error('[/api/report]',e);
     res.status(500).json({ok:false,error:e.message});
   }
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT,()=>console.log(`✓ Porta ${PORT}`));
-}
-
+if (process.env.NODE_ENV!=='production') app.listen(PORT,()=>console.log(`✓ Porta ${PORT}`));
 module.exports = app;
