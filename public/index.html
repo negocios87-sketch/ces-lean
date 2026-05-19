@@ -14,15 +14,12 @@
   --gold:#b8873f;--goldP:#f5e9d6;--sage:#4a7c6a;--rust:#c0533a;
   --muted:#8a8277;--border:#e0d9d0;--text:#1c2020;
   --radius:8px;--shadow:0 1px 3px rgba(28,32,32,.06),0 4px 16px rgba(28,32,32,.06);
-  /* LEAN = royal blue */
   --lean:#4a6fa5;--lean2:#7096c4;--leanBg:#f0f4fb;
-  /* CES = petróleo */
   --ces:#0e7490;--ces2:#06b6d4;--cesBg:#ecfeff;
 }
 html{font-size:14px}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
-/* ── TOPBAR ── */
 .topbar{background:var(--navy);padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .tb-left{display:flex;align-items:center;gap:20px}
 .tb-logo{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--gold);letter-spacing:.05em}
@@ -31,7 +28,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .prod-toggle{display:flex;gap:3px;padding:10px 0}
 .ptog{background:none;border:none;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;padding:6px 20px;cursor:pointer;border-radius:6px;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
 .ptog:hover{color:rgba(255,255,255,.85)}
-.ptog.lean{background:var(--lean);color:#fff;}
+.ptog.lean{background:var(--lean);color:#fff}
 .ptog.ces{background:var(--ces);color:#fff}
 .tb-right{display:flex;align-items:center;gap:12px}
 .tb-meta{font-size:.68rem;color:rgba(255,255,255,.32);letter-spacing:.03em}
@@ -39,10 +36,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .tbtn:hover{background:rgba(255,255,255,.1);color:#fff}
 .tbtn:disabled{opacity:.4;cursor:default}
 
-/* ── PAGE ── */
 .page{max-width:1200px;margin:0 auto;padding:28px 24px 64px}
 
-/* ── HEADER DO PRODUTO ── */
 .ph-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border)}
 .ph-eye{font-size:.64rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
 .ph-ttl{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;color:var(--navy);line-height:1.1}
@@ -51,7 +46,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .badge-lean{background:var(--leanBg);color:var(--lean)}
 .badge-ces{background:var(--cesBg);color:var(--ces)}
 
-/* ── SECTION TITLES ── */
 .sec-block{margin-top:36px;margin-bottom:16px}
 .sec-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .sec-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1.1}
@@ -65,10 +59,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .div-ganho{background:linear-gradient(90deg,#166534,#4ade80)}
 .div-perda{background:linear-gradient(90deg,#991b1b,#f87171)}
 
-/* ── KPIs ── */
 .kpi-row{display:grid;gap:10px;margin-bottom:18px}
 .kpi5{grid-template-columns:repeat(5,1fr)}
-.kpi4{grid-template-columns:repeat(4,1fr)}
 .kpi3{grid-template-columns:repeat(3,1fr)}
 .kpi2{grid-template-columns:repeat(2,1fr)}
 .kpi1{grid-template-columns:1fr}
@@ -78,7 +70,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .kpi .val{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:700;color:var(--navy);line-height:1}
 .kpi .sub{font-size:.69rem;color:var(--muted);margin-top:5px}
 
-/* ── CHARTS ── */
 .charts-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .charts-1{margin-bottom:16px}
 .ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 14px;box-shadow:var(--shadow)}
@@ -86,14 +77,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .cwrap{position:relative;height:170px}
 .cwrap.md{height:200px}
 
-/* ── GANHOS TOGGLE ── */
+/* Linha de dois painéis lado a lado (tabela + ot-card) */
+.side-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;align-items:start}
+
 .gtog-row{display:flex;gap:6px;margin-bottom:16px}
 .gtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
 .gtog:hover{border-color:var(--navy);color:var(--navy)}
 .gtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
 
-/* ── TABELAS ── */
-.twrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;margin-bottom:16px}
+.twrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:.8rem}
 thead{background:var(--navy)}
 thead th{color:rgba(255,255,255,.75);font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left;white-space:nowrap}
@@ -106,30 +98,29 @@ tbody td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 tfoot td{padding:9px 14px;font-weight:700;color:var(--navy);background:var(--goldP);border-top:1.5px solid var(--border)}
 tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .td-name{font-weight:500;color:var(--navy)}
-.td-pct{font-weight:700}
 .ori-row:hover{background:var(--goldP)!important}
 
-/* ── ORIGEM TEMPORAL ── */
-.ot-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px}
+.ot-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
 .ot-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .ot-rows{display:flex;flex-direction:column;gap:10px}
-.ot-row{display:flex;align-items:center;gap:12px}
-.ot-label{width:160px;flex-shrink:0;font-size:.8rem;color:var(--text)}
+.ot-row{display:flex;align-items:center;gap:10px}
+.ot-label{width:130px;flex-shrink:0;font-size:.78rem;color:var(--text)}
 .ot-track{flex:1;background:var(--border);border-radius:3px;height:7px}
 .ot-fill{height:7px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.ot-val{width:32px;text-align:right;font-size:.8rem;font-weight:700;color:var(--navy)}
-.ot-pct{width:36px;text-align:right;font-size:.72rem;color:var(--muted)}
+.ot-val{width:28px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
+.ot-pct{width:34px;text-align:right;font-size:.7rem;color:var(--muted)}
 
-/* ── MOTIVOS ── */
 .motivos{display:flex;flex-direction:column;gap:9px}
 .motivo-row{display:flex;align-items:center;gap:10px}
-.motivo-name{width:160px;flex-shrink:0;font-size:.77rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motivo-name{width:150px;flex-shrink:0;font-size:.77rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .motivo-track{flex:1;background:var(--border);border-radius:3px;height:5px}
 .motivo-fill{height:5px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .motivo-pct{width:34px;text-align:right;font-size:.69rem;color:var(--muted)}
 .motivo-count{width:26px;text-align:right;font-size:.77rem;font-weight:600;color:var(--navy)}
 
-/* ── ESTADO ── */
+.sec-lbl2{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.sec-lbl2 span{flex:1;height:1px;background:var(--border);display:block}
+
 .state-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:14px;color:var(--muted)}
 .spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -138,8 +129,8 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .pfooter span{font-size:.67rem;color:var(--muted)}
 
 @media(max-width:900px){
-  .kpi5,.kpi4,.kpi3{grid-template-columns:1fr 1fr}
-  .charts-2{grid-template-columns:1fr}
+  .kpi5,.kpi3{grid-template-columns:1fr 1fr}
+  .charts-2,.side-row{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -170,54 +161,46 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 </div>
 
 <script>
-let DATA = null, PROD = 'lean';
-const charts = {};
+let DATA=null, PROD='lean';
+const charts={};
 
-/* ── Formatters ─────────────────────────────────── */
-const brl  = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
-const brlK = n => n>=1000?'R$'+(n/1000).toFixed(0)+'k':'R$'+Math.round(n);
-const fmtN = n => Math.round(n).toLocaleString('pt-BR');
-const fmtW = w => { const[,m,d]=w.split('-'); return `${d}/${m}`; };
-const fmtD = d => { const[,,day]=d.split('-'); return String(+day); };
-const fmtM = ym => { if(!ym)return'—'; const[y,mo]=ym.split('-'); return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y; };
-const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const brl  = n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const brlK = n=>n>=1000?'R$'+(n/1000).toFixed(0)+'k':'R$'+Math.round(n);
+const fmtN = n=>Math.round(n).toLocaleString('pt-BR');
+const fmtW = w=>{const[,m,d]=w.split('-');return`${d}/${m}`;};
+const fmtD = d=>{const[,,day]=d.split('-');return String(+day);};
+const fmtM = ym=>{if(!ym)return'—';const[y,mo]=ym.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y;};
+const esc  = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-/* ── Colors ─────────────────────────────────────── */
-const C = {
-  lean:    '#4a6fa5', lean2:'#7096c4', leanBg:'#f0f4fb',
-  ces:     '#0e7490', ces2: '#06b6d4', cesBg: '#ecfeff',
-  ganho:   '#166534', perda:'#991b1b',
-};
-function color(p){ return p==='lean'?C.lean:C.ces; }
-function color2(p){ return p==='lean'?C.lean2:C.ces2; }
+const C={lean:'#4a6fa5',lean2:'#7096c4',ces:'#0e7490',ces2:'#06b6d4'};
+const color  = p=>p==='lean'?C.lean:C.ces;
+const color2 = p=>p==='lean'?C.lean2:C.ces2;
 
-/* ── Chart.js setup ─────────────────────────────── */
 Chart.register(ChartDataLabels);
-Chart.defaults.font = {family:'DM Sans',size:10};
-Chart.defaults.color = '#8a8277';
-const GC = 'rgba(28,32,32,.06)';
+Chart.defaults.font={family:'DM Sans',size:10};
+Chart.defaults.color='#8a8277';
+const GC='rgba(28,32,32,.06)';
 
-function dk(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+function dk(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-/* Delta plugin para gráficos semanais */
-const deltaPlugin = {
+/* ── Delta plugin ── */
+const deltaPlugin={
   id:'delta',
   afterDatasetsDraw(chart){
-    if(!chart.options.plugins?.delta?.show) return;
-    const {ctx} = chart;
-    const meta  = chart.getDatasetMeta(0);
-    const data  = chart.data.datasets[0].data;
+    if(!chart.options.plugins?.delta?.show)return;
+    const{ctx}=chart;
+    const meta=chart.getDatasetMeta(0);
+    const data=chart.data.datasets[0].data;
     for(let i=1;i<meta.data.length;i++){
-      const prev=data[i-1], curr=data[i];
-      if(!prev||!curr) continue;
-      const pct=((curr-prev)/prev*100);
+      const prev=data[i-1],curr=data[i];
+      if(!prev||!curr)continue;
+      const pct=(curr-prev)/prev*100;
       const isPos=pct>=0;
-      const col=isPos?'#166534':'#991b1b';
       const midX=(meta.data[i-1].x+meta.data[i].x)/2;
       const topY=Math.min(meta.data[i-1].y,meta.data[i].y)-18;
       ctx.save();
       ctx.font='bold 9px DM Sans,sans-serif';
-      ctx.fillStyle=col;
+      ctx.fillStyle=isPos?'#166534':'#991b1b';
       ctx.textAlign='center';
       ctx.fillText((isPos?'▲':'▼')+Math.abs(pct).toFixed(0)+'%',midX,topY);
       ctx.restore();
@@ -226,10 +209,10 @@ const deltaPlugin = {
 };
 Chart.register(deltaPlugin);
 
-/* Bar chart normal com rótulos */
+/* ── Bar simples ── */
 function mkBar(id,labels,values,col,opts={}){
   dk(id);
-  const ctx=document.getElementById(id); if(!ctx)return;
+  const ctx=document.getElementById(id);if(!ctx)return;
   const isWeekly=opts.weekly||false;
   charts[id]=new Chart(ctx,{type:'bar',
     data:{labels,datasets:[{data:values,backgroundColor:col+'28',borderColor:col,borderWidth:1.5,borderRadius:4}]},
@@ -237,13 +220,7 @@ function mkBar(id,labels,values,col,opts={}){
       layout:{padding:{top:isWeekly?30:22}},
       plugins:{
         legend:{display:false},
-        datalabels:{
-          display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
-          formatter:v=>fmtN(v),
-          color:col,
-          font:{family:'DM Sans',size:9,weight:'700'},
-          anchor:'end',align:'top',offset:2,
-        },
+        datalabels:{display:c=>c.dataset.data[c.dataIndex]>0,formatter:v=>fmtN(v),color:col,font:{family:'DM Sans',size:9,weight:'700'},anchor:'end',align:'top',offset:2},
         tooltip:{callbacks:{label:c=>' '+fmtN(c.parsed.y)}},
         delta:{show:isWeekly},
       },
@@ -253,69 +230,10 @@ function mkBar(id,labels,values,col,opts={}){
       }}});
 }
 
-
-/* Linha de distribuição percentual por faixa de score */
-function mkScoreLine(id, items, col){
-  dk(id);
-  const ctx=document.getElementById(id); if(!ctx)return;
-  const labels=(items||[]).map(x=>x.label);
-  const values=(items||[]).map(x=>x.pct||0);
-
-  const scoreBandPlugin = {
-    id:'scoreBandPlugin',
-    beforeDatasetsDraw(chart){
-      const {ctx, chartArea, scales} = chart;
-      if(!chartArea || !scales?.x) return;
-      const startIndex=4, endIndex=6; // De 6 a 8,9 — região ICP
-      const x0=scales.x.getPixelForValue(startIndex)-((scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0))/2);
-      const x1=scales.x.getPixelForValue(endIndex)+((scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0))/2);
-      ctx.save();
-      ctx.fillStyle='rgba(184,135,63,.16)';
-      ctx.fillRect(x0, chartArea.top, x1-x0, chartArea.bottom-chartArea.top);
-      ctx.restore();
-    }
-  };
-
-  charts[id]=new Chart(ctx,{type:'line',
-    data:{labels,datasets:[{
-      data:values,
-      borderColor:col,
-      backgroundColor:col+'18',
-      borderWidth:2,
-      fill:false,
-      tension:.28,
-      pointRadius:4,
-      pointHoverRadius:5,
-      pointBackgroundColor:col,
-    }]},
-    plugins:[scoreBandPlugin],
-    options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:24,right:8,left:4,bottom:0}},
-      plugins:{
-        legend:{display:false},
-        datalabels:{
-          display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
-          formatter:v=>Number(v).toFixed(v%1?1:0)+'%',
-          color:'#1c2b3a',
-          backgroundColor:'rgba(255,255,255,.78)',
-          borderRadius:3,
-          padding:{top:2,bottom:2,left:4,right:4},
-          font:{family:'DM Sans',size:9,weight:'700'},
-          anchor:'end',align:'top',offset:3,
-        },
-        tooltip:{callbacks:{label:c=>' '+Number(c.parsed.y).toFixed(1)+'% dos criados'}},
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{font:{size:9}},border:{color:'transparent'}},
-        y:{grid:{color:GC},ticks:{font:{size:9},callback:v=>v+'%',maxTicksLimit:5},border:{color:'transparent'},beginAtZero:true,suggestedMax:40}
-      }}
-  });
-}
-
-/* Stacked bar com rótulo do total */
+/* ── Stacked bar ── */
 function mkStackedBar(id,labels,datasets){
   dk(id);
-  const ctx=document.getElementById(id); if(!ctx)return;
+  const ctx=document.getElementById(id);if(!ctx)return;
   const totals=labels.map((_,i)=>datasets.reduce((s,d)=>s+(d.data[i]||0),0));
   charts[id]=new Chart(ctx,{type:'bar',
     data:{labels,datasets},
@@ -324,11 +242,9 @@ function mkStackedBar(id,labels,datasets){
       plugins:{
         legend:{display:true,position:'bottom',labels:{font:{size:9},padding:10,boxWidth:9}},
         datalabels:{
-          display:(ctx)=>ctx.datasetIndex===datasets.length-1&&totals[ctx.dataIndex]>0,
-          formatter:(_,ctx)=>fmtN(totals[ctx.dataIndex]),
-          color:'#1c2b3a',
-          font:{family:'DM Sans',size:9,weight:'700'},
-          anchor:'end',align:'top',offset:2,
+          display:c=>c.datasetIndex===datasets.length-1&&totals[c.dataIndex]>0,
+          formatter:(_,c)=>fmtN(totals[c.dataIndex]),
+          color:'#1c2b3a',font:{family:'DM Sans',size:9,weight:'700'},anchor:'end',align:'top',offset:2,
         },
         tooltip:{mode:'index',intersect:false},
       },
@@ -338,102 +254,172 @@ function mkStackedBar(id,labels,datasets){
       }}});
 }
 
-/* ── Origem temporal widget ─────────────────────── */
-function otHtml(data,color){
-  if(!data||!data.length) return '';
+/* ── Score line (com banda ICP e tooltip com volume) ── */
+function mkScoreLine(id,items,col){
+  dk(id);
+  const ctx=document.getElementById(id);if(!ctx)return;
+  const labels=(items||[]).map(x=>x.label);
+  const values=(items||[]).map(x=>x.pct||0);
+  const volumes=(items||[]).map(x=>x.v||0);
+
+  const bandPlugin={
+    id:'scoreBand',
+    beforeDatasetsDraw(chart){
+      const{ctx:c,chartArea,scales}=chart;
+      if(!chartArea||!scales?.x)return;
+      const step=(scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0));
+      const x0=scales.x.getPixelForValue(4)-step/2;
+      const x1=scales.x.getPixelForValue(6)+step/2;
+      c.save();
+      c.fillStyle='rgba(184,135,63,.16)';
+      c.fillRect(x0,chartArea.top,x1-x0,chartArea.bottom-chartArea.top);
+      c.restore();
+    }
+  };
+
+  charts[id]=new Chart(ctx,{type:'line',
+    data:{labels,datasets:[{
+      data:values,borderColor:col,backgroundColor:col+'18',
+      borderWidth:2,fill:false,tension:.28,
+      pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
+    }]},
+    plugins:[bandPlugin],
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:24,right:8,left:4}},
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display:c=>c.dataset.data[c.dataIndex]>0,
+          formatter:v=>Number(v).toFixed(v%1?1:0)+'%',
+          color:'#1c2b3a',
+          backgroundColor:'rgba(255,255,255,.78)',
+          borderRadius:3,padding:{top:2,bottom:2,left:4,right:4},
+          font:{family:'DM Sans',size:9,weight:'700'},
+          anchor:'end',align:'top',offset:3,
+        },
+        tooltip:{callbacks:{
+          label:c=>{
+            const pct=Number(c.parsed.y).toFixed(1)+'%';
+            const vol=volumes[c.dataIndex]||0;
+            return` ${pct} · ${fmtN(vol)} leads`;
+          }
+        }},
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}},border:{color:'transparent'}},
+        y:{grid:{color:GC},ticks:{font:{size:9},callback:v=>v+'%',maxTicksLimit:5},border:{color:'transparent'},beginAtZero:true,suggestedMax:40}
+      }}
+  });
+}
+
+/* ── Origem temporal ── */
+function otHtml(data,col){
+  if(!data||!data.length)return'<div style="color:var(--muted);font-size:.78rem">Sem dados.</div>';
   const max=Math.max(...data.map(d=>d.v),1);
   return data.map(d=>`
     <div class="ot-row">
       <div class="ot-label">${esc(d.label)}</div>
-      <div class="ot-track"><div class="ot-fill" style="width:${Math.round(d.v/max*100)}%;background:${color}"></div></div>
+      <div class="ot-track"><div class="ot-fill" style="width:${Math.round(d.v/max*100)}%;background:${col}"></div></div>
       <div class="ot-val">${fmtN(d.v)}</div>
       <div class="ot-pct">${d.pct}%</div>
     </div>`).join('');
 }
 
-/* ── Render principal ───────────────────────────── */
+/* ── Sub-tabela de deals (expansível) ── */
+function dealsSubTable(deals){
+  if(!deals||!deals.length)return'<div style="padding:10px 14px;font-size:.76rem;color:var(--muted)">Nenhuma venda detalhada.</div>';
+  return`<table style="width:100%;font-size:.76rem">
+    <thead style="background:#2d4459">
+      <tr>
+        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Campanha</th>
+        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Proprietário</th>
+        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Produto</th>
+        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Data Ganho</th>
+        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Valor</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${[...deals].sort((a,b)=>b.valor-a.valor).map(d=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 14px;font-size:.76rem;color:var(--muted)">${esc((d.campanha||'').length>40?(d.campanha||'').slice(0,38)+'…':d.campanha||'—')}</td>
+          <td style="padding:7px 14px;font-size:.76rem;font-weight:500;color:var(--navy)">${esc(d.proprietario||'—')}</td>
+          <td style="padding:7px 14px;font-size:.76rem;color:var(--text)">${esc((d.produto||'').length>32?(d.produto||'').slice(0,30)+'…':d.produto||'—')}</td>
+          <td style="padding:7px 14px;font-size:.76rem;text-align:right;color:var(--muted)">${d.dataGanho||'—'}</td>
+          <td style="padding:7px 14px;font-size:.76rem;font-weight:700;text-align:right;color:var(--navy)">${brl(d.valor||0)}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ── Tabela expansível genérica ── */
+function expandTable(rows,prefix){
+  if(!rows||!rows.length)return'<div style="padding:10px;font-size:.8rem;color:var(--muted)">Nenhum dado.</div>';
+  return`<table>
+    <thead><tr><th style="width:24px"></th><th>Origem</th><th>Vendas</th><th>Receita</th><th>Ticket</th></tr></thead>
+    <tbody>
+      ${rows.map((o,i)=>`
+        <tr class="ori-row" onclick="toggleDeals('${prefix}-${i}')" style="cursor:pointer">
+          <td style="text-align:center;color:var(--muted);font-size:.8rem" id="${prefix}-arr-${i}">▶</td>
+          <td class="td-name">${esc(o.nome)}</td>
+          <td>${fmtN(o.t)}</td>
+          <td>${brl(o.rev||0)}</td>
+          <td>${o.ticket>0?brl(o.ticket):'—'}</td>
+        </tr>
+        <tr id="${prefix}-${i}" style="display:none">
+          <td colspan="5" style="padding:0;background:var(--bg)">${dealsSubTable(o.deals)}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ── Tabela campanha (deals direto, expansível como item único) ── */
+function campTable(deals,prefix){
+  if(!deals||!deals.length)return'<div style="padding:10px;font-size:.8rem;color:var(--muted)">Nenhuma venda da campanha no período.</div>';
+  const total=deals.reduce((s,d)=>s+(d.valor||0),0);
+  return`<table>
+    <thead><tr><th style="width:24px"></th><th>Campanha</th><th>Receita</th></tr></thead>
+    <tbody>
+      <tr class="ori-row" onclick="toggleDeals('${prefix}-0')" style="cursor:pointer">
+        <td style="text-align:center;color:var(--muted);font-size:.8rem" id="${prefix}-arr-0">▶</td>
+        <td class="td-name">Vendas da campanha</td>
+        <td>${brl(total)}</td>
+      </tr>
+      <tr id="${prefix}-0" style="display:none">
+        <td colspan="3" style="padding:0;background:var(--bg)">${dealsSubTable(deals)}</td>
+      </tr>
+    </tbody>
+    <tfoot><tr><td></td><td>Total · ${fmtN(deals.length)} vendas</td><td>${brl(total)}</td></tr></tfoot>
+  </table>`;
+}
+
+/* ── Render ── */
 function render(){
   if(!DATA)return;
-  const d   = DATA[PROD];
-  const col = color(PROD);
-  const col2= color2(PROD);
-  const lbl = PROD==='lean'?'Lean Governance':'CES';
-  const mes = fmtM(DATA.mes);
-  const ts  = new Date(DATA.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  const badgeClass = PROD==='lean'?'badge-lean':'badge-ces';
-  const divClass   = PROD==='lean'?'div-lean':'div-ces';
+  const d=DATA[PROD];
+  const col=color(PROD),col2=color2(PROD);
+  const lbl=PROD==='lean'?'Lean Governance':'CES';
+  const mes=fmtM(DATA.mes);
+  const ts=new Date(DATA.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const badgeClass=PROD==='lean'?'badge-lean':'badge-ces';
+  const divClass=PROD==='lean'?'div-lean':'div-ces';
 
   document.getElementById('tbMeta').textContent=`${mes} · ${ts}`;
   document.getElementById('togLean').className=`ptog${PROD==='lean'?' lean':''}`;
   document.getElementById('togCes').className =`ptog${PROD==='ces'?' ces':''}`;
 
-  const {criados,ganhos,perdidos}=d;
+  const{criados,ganhos,perdidos}=d;
   const dLabels=criados.porDia.map(x=>fmtD(x.d));
   const wLabels=criados.porSemana.map(x=>fmtW(x.w));
 
-  /* tabela produtos dos criados */
-  const tblProd = criados.produtosVendidos?.length ? `
-    <div class="sec-lbl2" style="font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:8px">
-      Produtos vendidos dos leads criados este mês
-      <span style="flex:1;height:1px;background:var(--border);display:block"></span>
-    </div>
-    <div class="twrap">
-      <table><thead><tr><th>Produto</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
-      <tbody>${criados.produtosVendidos.map(p=>`<tr><td class="td-name">${esc(p.nome)}</td><td>${fmtN(p.t)}</td><td>${brl(p.rev)}</td><td>${brl(p.ticket)}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td>Total</td><td>${fmtN(criados.produtosVendidos.reduce((a,p)=>a+p.t,0))}</td><td>${brl(criados.produtosVendidos.reduce((a,p)=>a+p.rev,0))}</td><td>—</td></tr></tfoot>
-      </table>
-    </div>` : '';
+  /* ── Tabela produtos criados ── */
+  const tblProd=criados.produtosVendidos?.length?`
+    <div class="sec-lbl2">Produtos vendidos · leads criados este mês<span></span></div>
+    <div class="twrap" style="margin-bottom:16px">
+      ${expandTable(criados.produtosVendidos,'pv')}
+    </div>`:'' ;
 
-  /* tabela origens (por produto) com expand */
-  const tblOrigens = ganhos.porProduto.origens?.length ? `
-    <div class="sec-lbl2" style="font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:8px">
-      Campanha de origem das vendas
-      <span style="flex:1;height:1px;background:var(--border);display:block"></span>
-    </div>
-    <div class="twrap">
-      <table>
-        <thead><tr><th></th><th>Campanha</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
-        <tbody>
-          ${ganhos.porProduto.origens.map((o,oi)=>`
-            <tr class="ori-row" onclick="toggleOrigemDeals('od-${oi}')" style="cursor:pointer">
-              <td style="width:28px;text-align:center;color:var(--muted);font-size:.8rem" id="ori-arrow-${oi}">▶</td>
-              <td class="td-name">${esc(o.nome)}</td>
-              <td>${fmtN(o.t)}</td>
-              <td>${brl(o.rev)}</td>
-              <td>${brl(o.ticket)}</td>
-            </tr>
-            <tr id="od-${oi}" style="display:none">
-              <td colspan="5" style="padding:0;background:var(--bg)">
-                <table style="width:100%;font-size:.76rem">
-                  <thead style="background:#2d4459">
-                    <tr>
-                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Campanha</th>
-                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Proprietário</th>
-                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Produto</th>
-                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Data Ganho</th>
-                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${(o.deals||[]).sort((a,b)=>b.valor-a.valor).map(d=>`
-                      <tr style="border-bottom:1px solid var(--border)">
-                        <td style="padding:7px 14px;font-size:.76rem;color:var(--muted)">${esc(d.campanha.length>40?d.campanha.slice(0,38)+'…':d.campanha)}</td>
-                        <td style="padding:7px 14px;font-size:.76rem;font-weight:500;color:var(--navy)">${esc(d.proprietario)}</td>
-                        <td style="padding:7px 14px;font-size:.76rem;color:var(--text)">${esc(d.produto.length>35?d.produto.slice(0,33)+'…':d.produto)}</td>
-                        <td style="padding:7px 14px;font-size:.76rem;text-align:right;color:var(--muted)">${d.dataGanho}</td>
-                        <td style="padding:7px 14px;font-size:.76rem;font-weight:700;text-align:right;color:var(--navy)">${brl(d.valor)}</td>
-                      </tr>`).join('')}
-                  </tbody>
-                </table>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>` : '';
+  document.getElementById('content').innerHTML=`
 
-  document.getElementById('content').innerHTML = `
-
-    <!-- HEADER -->
     <div class="ph-row">
       <div>
         <div class="ph-badge ${badgeClass}">${lbl}</div>
@@ -442,7 +428,7 @@ function render(){
       </div>
     </div>
 
-    <!-- ════ LEADS CRIADOS ══════════════════════════════════ -->
+    <!-- ══ LEADS CRIADOS ═══════════════════════════ -->
     <div class="sec-block">
       <div class="sec-eyebrow">Eixo temporal · Data de Criação</div>
       <div class="sec-title">Leads Criados <span class="sec-date-tag tag-criado">Mês atual · ${mes}</span></div>
@@ -455,14 +441,14 @@ function render(){
         <div class="cwrap md"><canvas id="ch-cri-dia"></canvas></div>
       </div>
       <div class="ccard">
-        <div class="ccard-ttl">Volume por semana · últimas 8 semanas completas</div>
+        <div class="ccard-ttl">Volume por semana · últimas 8 semanas completas (Qui→Qua)</div>
         <div class="cwrap md"><canvas id="ch-cri-sem"></canvas></div>
       </div>
     </div>
 
     <div class="charts-1">
       <div class="ccard">
-        <div class="ccard-ttl">% por etiqueta de score · criados no mês atual</div>
+        <div class="ccard-ttl">% por faixa de score · criados no mês · zona dourada = ICP</div>
         <div class="cwrap md"><canvas id="ch-cri-score"></canvas></div>
       </div>
     </div>
@@ -481,7 +467,7 @@ function render(){
     </div>
     ${tblProd}
 
-    <!-- ════ NEGÓCIOS GANHOS ═════════════════════════════════ -->
+    <!-- ══ NEGÓCIOS GANHOS ════════════════════════ -->
     <div class="sec-block">
       <div class="sec-eyebrow">Eixo temporal · Data de Ganho</div>
       <div class="sec-title">Negócios Ganhos <span class="sec-date-tag tag-ganho">Data de Ganho · ${mes}</span></div>
@@ -502,12 +488,18 @@ function render(){
       </div>
       <div class="charts-2">
         <div class="ccard"><div class="ccard-ttl">Vendas por dia · produto vendido</div><div class="cwrap"><canvas id="ch-gp-dia"></canvas></div></div>
-        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas completas</div><div class="cwrap"><canvas id="ch-gp-sem"></canvas></div></div>
+        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-gp-sem"></canvas></div></div>
       </div>
-      ${tblOrigens}
-      <div class="ot-card">
-        <div class="ot-title">Quando foi criado o lead que virou venda · por produto</div>
-        <div class="ot-rows">${otHtml(ganhos.porProduto.origemTemporal,col)}</div>
+      <!-- Campanha de origem + Quando foi criado: LADO A LADO -->
+      <div class="side-row">
+        <div>
+          <div class="sec-lbl2">Campanha de origem das vendas<span></span></div>
+          <div class="twrap">${expandTable(ganhos.porProduto.origens||[],'gpo')}</div>
+        </div>
+        <div class="ot-card">
+          <div class="ot-title">Quando foi criado o lead que virou venda · por produto</div>
+          <div class="ot-rows">${otHtml(ganhos.porProduto.origemTemporal,col)}</div>
+        </div>
       </div>
     </div>
 
@@ -520,15 +512,22 @@ function render(){
       </div>
       <div class="charts-2">
         <div class="ccard"><div class="ccard-ttl">Vendas por dia · campanha de origem</div><div class="cwrap"><canvas id="ch-gc-dia"></canvas></div></div>
-        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas completas</div><div class="cwrap"><canvas id="ch-gc-sem"></canvas></div></div>
+        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-gc-sem"></canvas></div></div>
       </div>
-      <div class="ot-card">
-        <div class="ot-title">Quando foi criado o lead que virou venda · por campanha</div>
-        <div class="ot-rows">${otHtml(ganhos.porCampanha.origemTemporal,col)}</div>
+      <!-- Tabela de vendas + Quando foi criado: LADO A LADO -->
+      <div class="side-row">
+        <div>
+          <div class="sec-lbl2">Vendas da campanha · detalhamento<span></span></div>
+          <div class="twrap">${campTable(ganhos.porCampanha.deals||[],'gcd')}</div>
+        </div>
+        <div class="ot-card">
+          <div class="ot-title">Quando foi criado o lead que virou venda · por campanha</div>
+          <div class="ot-rows">${otHtml(ganhos.porCampanha.origemTemporal,col)}</div>
+        </div>
       </div>
     </div>
 
-    <!-- ════ NEGÓCIOS PERDIDOS ═══════════════════════════════ -->
+    <!-- ══ NEGÓCIOS PERDIDOS ══════════════════════ -->
     <div class="sec-block">
       <div class="sec-eyebrow">Eixo temporal · Data de Perda</div>
       <div class="sec-title">Negócios Perdidos <span class="sec-date-tag tag-perda">Data de Perda · ${mes}</span></div>
@@ -542,17 +541,19 @@ function render(){
 
     <div class="charts-2">
       <div class="ccard"><div class="ccard-ttl">Perdidos por dia · mês atual</div><div class="cwrap"><canvas id="ch-perd-dia"></canvas></div></div>
-      <div class="ccard"><div class="ccard-ttl">Perdidos por semana · últimas 8 semanas completas</div><div class="cwrap"><canvas id="ch-perd-sem"></canvas></div></div>
+      <div class="ccard"><div class="ccard-ttl">Perdidos por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-perd-sem"></canvas></div></div>
     </div>
 
-    <div class="ot-card">
-      <div class="ot-title">Quando foi criado o lead que foi perdido</div>
-      <div class="ot-rows">${otHtml(perdidos.origemTemporal,'#c0533a')}</div>
-    </div>
-
-    <div class="ccard" style="margin-bottom:16px">
-      <div class="ccard-ttl">Top motivos de perda · mês atual</div>
-      <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
+    <!-- Motivos + Quando foi criado: LADO A LADO -->
+    <div class="side-row">
+      <div class="ccard">
+        <div class="ccard-ttl">Top motivos de perda · mês atual</div>
+        <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
+      </div>
+      <div class="ot-card">
+        <div class="ot-title">Quando foi criado o lead que foi perdido</div>
+        <div class="ot-rows">${otHtml(perdidos.origemTemporal,'#c0533a')}</div>
+      </div>
     </div>
 
     <div class="pfooter">
@@ -579,19 +580,17 @@ function render(){
     {label:'Ganho',   data:criados.porDia.map(x=>x.g),backgroundColor:'#4a7c6a55',borderWidth:0,borderRadius:2},
     {label:'Perdido', data:criados.porDia.map(x=>x.p),backgroundColor:'#c0533a55',borderWidth:0,borderRadius:2},
   ]);
-  mkBar('ch-cri-sem', wLabels, criados.porSemana.map(x=>x.v), col, {weekly:true});
-  mkScoreLine('ch-cri-score', criados.scoreFaixas || [], col);
-  mkBar('ch-gp-dia',  dLabels, ganhos.porProduto.porDia.map(x=>x.v),  col, {maxTicks:20});
-  mkBar('ch-gp-sem',  wLabels, ganhos.porProduto.porSemana.map(x=>x.v), col, {weekly:true});
-  mkBar('ch-gc-dia',  dLabels, ganhos.porCampanha.porDia.map(x=>x.v), col, {maxTicks:20});
-  mkBar('ch-gc-sem',  wLabels, ganhos.porCampanha.porSemana.map(x=>x.v), col, {weekly:true});
-  mkBar('ch-perd-dia',dLabels, perdidos.porDia.map(x=>x.v), '#c0533a', {maxTicks:20});
-  mkBar('ch-perd-sem',wLabels, perdidos.porSemana.map(x=>x.v), '#c0533a', {weekly:true});
+  mkBar('ch-cri-sem', wLabels,criados.porSemana.map(x=>x.v),col,{weekly:true});
+  mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col);
+  mkBar('ch-gp-dia',  dLabels,ganhos.porProduto.porDia.map(x=>x.v),col,{maxTicks:20});
+  mkBar('ch-gp-sem',  wLabels,ganhos.porProduto.porSemana.map(x=>x.v),col,{weekly:true});
+  mkBar('ch-gc-dia',  dLabels,ganhos.porCampanha.porDia.map(x=>x.v),col,{maxTicks:20});
+  mkBar('ch-gc-sem',  wLabels,ganhos.porCampanha.porSemana.map(x=>x.v),col,{weekly:true});
+  mkBar('ch-perd-dia',dLabels,perdidos.porDia.map(x=>x.v),'#c0533a',{maxTicks:20});
+  mkBar('ch-perd-sem',wLabels,perdidos.porSemana.map(x=>x.v),'#c0533a',{weekly:true});
 }
 
-function setProduct(p){
-  PROD=p; if(DATA)render();
-}
+function setProduct(p){PROD=p;if(DATA)render();}
 
 function switchGanhos(view){
   const isProd=view==='prod';
@@ -601,6 +600,17 @@ function switchGanhos(view){
   document.getElementById('gtog-camp').classList.toggle('active',!isProd);
 }
 
+function toggleDeals(id){
+  const row=document.getElementById(id);if(!row)return;
+  const parts=id.split('-');
+  const idx=parts[parts.length-1];
+  const prefix=parts.slice(0,-1).join('-');
+  const arrow=document.getElementById(prefix+'-arr-'+idx);
+  const open=row.style.display==='none'||row.style.display==='';
+  row.style.display=open?'table-row':'none';
+  if(arrow)arrow.textContent=open?'▼':'▶';
+}
+
 async function loadData(){
   const err=document.getElementById('errBanner');
   err.style.display='none';
@@ -608,7 +618,7 @@ async function loadData(){
     const r=await fetch('/api/report');
     const j=await r.json();
     if(!j.ok)throw new Error(j.error);
-    DATA=j; render();
+    DATA=j;render();
   }catch(e){
     err.textContent=`Erro ao carregar: ${e.message}`;
     err.style.display='block';
@@ -624,22 +634,11 @@ async function doRefresh(){
   btn.disabled=false;btn.textContent='↺ Atualizar';
 }
 
-function toggleOrigemDeals(id){
-  const row=document.getElementById(id);
-  if(!row)return;
-  const idx=id.replace('od-','');
-  const arrow=document.getElementById('ori-arrow-'+idx);
-  const open=row.style.display==='none'||row.style.display==='';
-  row.style.display=open?'table-row':'none';
-  if(arrow)arrow.textContent=open?'▼':'▶';
-}
-
 loadData();
 </script>
 
-<!-- ════ FERRAMENTAS DE APRESENTAÇÃO ═══════════════════════
-     L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom
-═══════════════════════════════════════════════════════════ -->
+<!-- ════ FERRAMENTAS DE APRESENTAÇÃO ════
+     L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom ════ -->
 <canvas id="pCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;"></canvas>
 <svg id="pSvg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8001;pointer-events:none;overflow:visible;"></svg>
 <div id="pSpot" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:7999;pointer-events:none;display:none;"></div>
@@ -648,7 +647,6 @@ loadData();
   <div id="pZoomContent" style="position:absolute;transform-origin:top left;"></div>
   <button onclick="exitZoom()" style="position:fixed;top:18px;right:24px;background:#1c2b3a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;z-index:9999;">✕ Sair do Zoom (Esc)</button>
 </div>
-
 <div id="pToolbar" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(28,43,58,.95);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:40px;display:flex;align-items:center;gap:4px;padding:6px 10px;z-index:9500;box-shadow:0 8px 32px rgba(0,0,0,.4);font-family:'DM Sans',sans-serif;">
   <div style="font-size:.58rem;color:rgba(255,255,255,.3);letter-spacing:.08em;text-transform:uppercase;padding:0 8px 0 4px;border-right:1px solid rgba(255,255,255,.1);margin-right:4px;">Apresentação</div>
   <button class="ptool" id="pt-laser" onclick="setTool('laser')" title="Laser (L)">🔴 Laser</button>
@@ -659,52 +657,44 @@ loadData();
   <div style="width:1px;height:20px;background:rgba(255,255,255,.1);margin:0 4px;"></div>
   <button class="ptool" onclick="clearCanvas()" title="Limpar (Del)" style="color:rgba(255,100,100,.8)">✕ Limpar</button>
 </div>
-
 <style>
 .ptool{background:none;border:none;color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;padding:6px 13px;border-radius:24px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .ptool:hover{background:rgba(255,255,255,.1);color:#fff}
 .ptool.on{background:rgba(245,197,24,.25);color:#f5c518;border:1px solid rgba(245,197,24,.4)}
 </style>
-
 <script>
-/* ══ ENGINE DE APRESENTAÇÃO ════════════════════════ */
 let pTool=null,pDraw=false,pPoints=[],pArrow=null;
 const pCvs=document.getElementById('pCanvas');
 const pCtx=pCvs.getContext('2d');
 const pSvg=document.getElementById('pSvg');
 const pSpot=document.getElementById('pSpot');
-
-/* Trail do laser */
 let laserTrail=[],laserEl=null,laserTrailEls=[];
 
-function resizeCvs(){ pCvs.width=window.innerWidth; pCvs.height=window.innerHeight; }
-resizeCvs(); window.addEventListener('resize',resizeCvs);
+function resizeCvs(){pCvs.width=window.innerWidth;pCvs.height=window.innerHeight;}
+resizeCvs();window.addEventListener('resize',resizeCvs);
 
 function setTool(t){
   pTool=pTool===t?null:t;
-  ['laser','arrow','pen','spot','zoom'].forEach(id=>{
-    const b=document.getElementById('pt-'+id); if(b) b.classList.toggle('on',pTool===id);
-  });
+  ['laser','arrow','pen','spot','zoom'].forEach(id=>{const b=document.getElementById('pt-'+id);if(b)b.classList.toggle('on',pTool===id);});
   pCvs.style.pointerEvents=['arrow','pen','zoom'].includes(pTool)?'auto':'none';
   document.body.style.cursor=pTool?'crosshair':'';
-  if(pTool!=='spot'){pSpot.style.display='none';}
-  if(pTool!=='laser'){clearLaser();}
-  if(pTool!=='zoom'){document.getElementById('pZoomBox').style.display='none';}
-  if(pTool==='spot') pSpot.style.display='block';
+  if(pTool!=='spot')pSpot.style.display='none';
+  if(pTool!=='laser')clearLaser();
+  if(pTool!=='zoom')document.getElementById('pZoomBox').style.display='none';
+  if(pTool==='spot')pSpot.style.display='block';
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
-  if(e.key==='l'||e.key==='L') setTool('laser');
-  if(e.key==='a'||e.key==='A') setTool('arrow');
-  if(e.key==='c'||e.key==='C') setTool('pen');
-  if(e.key==='s'||e.key==='S') setTool('spot');
-  if(e.key==='z'||e.key==='Z') setTool('zoom');
-  if(e.key==='Delete'||e.key==='Backspace') clearCanvas();
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.key==='l'||e.key==='L')setTool('laser');
+  if(e.key==='a'||e.key==='A')setTool('arrow');
+  if(e.key==='c'||e.key==='C')setTool('pen');
+  if(e.key==='s'||e.key==='S')setTool('spot');
+  if(e.key==='z'||e.key==='Z')setTool('zoom');
+  if(e.key==='Delete'||e.key==='Backspace')clearCanvas();
   if(e.key==='Escape'){exitZoom();setTool(null);}
 });
 
-/* ── LASER com rastro ─────────────────────── */
 function clearLaser(){
   if(laserEl){laserEl.remove();laserEl=null;}
   laserTrailEls.forEach(e=>e.remove());
@@ -714,91 +704,47 @@ function clearLaser(){
 document.addEventListener('mousemove',e=>{
   if(pTool==='laser'){
     laserTrail.push({x:e.clientX,y:e.clientY,t:Date.now()});
-    if(laserTrail.length>20) laserTrail.shift();
-
-    // Remove trail antigo
-    laserTrailEls.forEach(el=>el.remove());
-    laserTrailEls=[];
-
-    // Desenha rastro
+    if(laserTrail.length>20)laserTrail.shift();
+    laserTrailEls.forEach(el=>el.remove());laserTrailEls=[];
     const now=Date.now();
-    laserTrail.forEach((pt,i)=>{
-      const age=(now-pt.t)/400;
-      if(age>1) return;
-      const r=Math.max(1,4*(1-age));
-      const op=Math.max(0,0.5*(1-age));
+    laserTrail.forEach(pt=>{
+      const age=(now-pt.t)/400;if(age>1)return;
+      const r=Math.max(1,4*(1-age)),op=Math.max(0,0.5*(1-age));
       const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);
-      c.setAttribute('r',r);c.setAttribute('fill',`rgba(255,30,30,${op})`);
-      pSvg.appendChild(c);
-      laserTrailEls.push(c);
+      c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);c.setAttribute('r',r);c.setAttribute('fill',`rgba(255,30,30,${op})`);
+      pSvg.appendChild(c);laserTrailEls.push(c);
     });
-
-    // Ponto principal — menor, raio 5
     if(!laserEl){
       laserEl=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      laserEl.setAttribute('r','5');
-      laserEl.setAttribute('fill','rgba(255,30,30,.95)');
+      laserEl.setAttribute('r','5');laserEl.setAttribute('fill','rgba(255,30,30,.95)');
       if(!document.getElementById('laserDefs')){
-        const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-        defs.id='laserDefs';
-        defs.innerHTML=`<filter id="laserBlur" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="2.5" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>`;
+        const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');defs.id='laserDefs';
+        defs.innerHTML=`<filter id="laserBlur" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
         pSvg.prepend(defs);
       }
-      laserEl.setAttribute('filter','url(#laserBlur)');
-      pSvg.appendChild(laserEl);
+      laserEl.setAttribute('filter','url(#laserBlur)');pSvg.appendChild(laserEl);
     }
     laserEl.setAttribute('cx',e.clientX);laserEl.setAttribute('cy',e.clientY);
   }
-  if(pTool==='spot'){
-    pSpot.style.background=`radial-gradient(circle 200px at ${e.clientX}px ${e.clientY}px,transparent 0%,rgba(0,0,0,.75) 100%)`;
-  }
+  if(pTool==='spot')pSpot.style.background=`radial-gradient(circle 200px at ${e.clientX}px ${e.clientY}px,transparent 0%,rgba(0,0,0,.75) 100%)`;
 });
 
-/* ── SETA, CANETA ────────────────────────── */
-pCvs.addEventListener('mousedown',e=>{
-  if(!pTool)return; pDraw=true;
-  if(pTool==='arrow') pArrow={x1:e.clientX,y1:e.clientY};
-  if(pTool==='pen')   pPoints=[{x:e.clientX,y:e.clientY}];
-  if(pTool==='zoom')  zoomStart(e);
-});
-pCvs.addEventListener('mousemove',e=>{
-  if(!pDraw)return;
-  if(pTool==='pen'){pPoints.push({x:e.clientX,y:e.clientY});drawStroke(pPoints);}
-  if(pTool==='zoom') zoomDrag(e);
-});
-pCvs.addEventListener('mouseup',e=>{
-  if(!pDraw)return; pDraw=false;
-  if(pTool==='arrow'&&pArrow){drawArrow(pArrow.x1,pArrow.y1,e.clientX,e.clientY);pArrow=null;}
-  if(pTool==='pen') pPoints=[];
-  if(pTool==='zoom') zoomEnd(e);
-});
+pCvs.addEventListener('mousedown',e=>{if(!pTool)return;pDraw=true;if(pTool==='arrow')pArrow={x1:e.clientX,y1:e.clientY};if(pTool==='pen')pPoints=[{x:e.clientX,y:e.clientY}];if(pTool==='zoom')zoomStart(e);});
+pCvs.addEventListener('mousemove',e=>{if(!pDraw)return;if(pTool==='pen'){pPoints.push({x:e.clientX,y:e.clientY});drawStroke(pPoints);}if(pTool==='zoom')zoomDrag(e);});
+pCvs.addEventListener('mouseup',e=>{if(!pDraw)return;pDraw=false;if(pTool==='arrow'&&pArrow){drawArrow(pArrow.x1,pArrow.y1,e.clientX,e.clientY);pArrow=null;}if(pTool==='pen')pPoints=[];if(pTool==='zoom')zoomEnd(e);});
 
-function drawStroke(pts){
-  if(pts.length<2)return;
-  pCtx.strokeStyle='#e03030';pCtx.lineWidth=2.5;pCtx.lineCap='round';pCtx.lineJoin='round';
-  pCtx.beginPath();pCtx.moveTo(pts[pts.length-2].x,pts[pts.length-2].y);pCtx.lineTo(pts[pts.length-1].x,pts[pts.length-1].y);pCtx.stroke();
-}
+function drawStroke(pts){if(pts.length<2)return;pCtx.strokeStyle='#e03030';pCtx.lineWidth=2.5;pCtx.lineCap='round';pCtx.lineJoin='round';pCtx.beginPath();pCtx.moveTo(pts[pts.length-2].x,pts[pts.length-2].y);pCtx.lineTo(pts[pts.length-1].x,pts[pts.length-1].y);pCtx.stroke();}
 
 function drawArrow(x1,y1,x2,y2){
-  const id=`arr${Date.now()}`;
-  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-  g.innerHTML=`<defs><marker id="${id}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f5c518"/></marker></defs>
-    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f5c518" stroke-width="3" stroke-linecap="round" marker-end="url(#${id})" opacity="1" style="transition:opacity 1s ease"/>`;
+  const id=`arr${Date.now()}`;const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.innerHTML=`<defs><marker id="${id}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f5c518"/></marker></defs><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f5c518" stroke-width="3" stroke-linecap="round" marker-end="url(#${id})" opacity="1" style="transition:opacity 1s ease"/>`;
   pSvg.appendChild(g);
   setTimeout(()=>{const l=g.querySelector('line');if(l)l.style.opacity='0';},2000);
   setTimeout(()=>g.remove(),3100);
 }
 
-function clearCanvas(){
-  pCtx.clearRect(0,0,pCvs.width,pCvs.height);
-  [...pSvg.querySelectorAll('g')].forEach(g=>g.remove());
-}
+function clearCanvas(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);[...pSvg.querySelectorAll('g')].forEach(g=>g.remove());}
 
-/* ── ZOOM ──────────────────────────────── */
 let zRect={x:0,y:0,w:0,h:0};
 const zBox=document.getElementById('pZoomBox');
 function zoomStart(e){zRect={x:e.clientX,y:e.clientY,w:0,h:0};zBox.style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0;display:block;`;}
