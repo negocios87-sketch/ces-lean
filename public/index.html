@@ -314,20 +314,7 @@ function mkBar(id,labels,values,col,opts={}){
   const ctx=document.getElementById(id);if(!ctx)return;
   const isWeekly=opts.weekly||false;
   charts[id]=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[
-      ...(snapItems&&snapItems.length?[{
-        data:snapItems.map(x=>x.pct||0),
-        borderColor:'#aaaaaa',backgroundColor:'transparent',
-        borderWidth:1.5,borderDash:[4,3],fill:false,tension:.28,
-        pointRadius:2,pointBackgroundColor:'#aaaaaa',
-        datalabels:{display:false},
-      }]:[]),
-      {
-        data:values,
-        borderColor:col,backgroundColor:col+'18',
-        borderWidth:2,fill:false,tension:.28,
-        pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
-      }]},
+    data:{labels,datasets:[{data:values,backgroundColor:col+'28',borderColor:col,borderWidth:1.5,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:isWeekly?30:22}},
       plugins:{
@@ -390,11 +377,20 @@ function mkScoreLine(id,items,col,snapItems){
   };
 
   charts[id]=new Chart(ctx,{type:'line',
-    data:{labels,datasets:[{
-      data:values,borderColor:col,backgroundColor:col+'18',
-      borderWidth:2,fill:false,tension:.28,
-      pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
-    }]},
+    data:{labels,datasets:[
+      ...(snapItems&&snapItems.length?[{
+        data:snapItems.map(x=>x.pct||0),
+        borderColor:'#bbbbbb',backgroundColor:'transparent',
+        borderWidth:1.5,borderDash:[4,3],fill:false,tension:.28,
+        pointRadius:2,pointBackgroundColor:'#bbbbbb',
+        datalabels:{display:false},
+      }]:[]),
+      {
+        data:values,borderColor:col,backgroundColor:col+'18',
+        borderWidth:2,fill:false,tension:.28,
+        pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
+      }
+    ]},
     plugins:[bandPlugin],
     options:{responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:24,right:8,left:4}},
