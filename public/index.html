@@ -25,41 +25,9 @@
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 13px; line-height: 1.5; }
 
-/* ── LOGIN ──────────────────────────────────────────────────── */
-#login {
-  display: flex; align-items: center; justify-content: center; min-height: 100vh;
-  background: radial-gradient(ellipse at 50% 0%, #1a1500 0%, var(--bg) 70%);
-}
-.login-card {
-  background: var(--s1); border: 1px solid var(--border);
-  border-radius: 16px; padding: 44px 40px; width: 380px;
-  box-shadow: 0 24px 80px rgba(0,0,0,.6);
-}
-.login-badge {
-  display: inline-block; background: var(--lean); color: #000;
-  font-size: 10px; font-weight: 700; letter-spacing: 1px;
-  text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 20px;
-}
-.login-title { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 6px; }
-.login-sub   { color: var(--muted2); font-size: 13px; margin-bottom: 32px; }
-.field { margin-bottom: 18px; }
-.field label { display: block; font-size: 11px; font-weight: 600; color: var(--muted2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 7px; }
-.field input {
-  width: 100%; background: var(--bg); border: 1px solid var(--border);
-  color: var(--text); border-radius: 8px; padding: 11px 14px; font-size: 14px;
-  outline: none; transition: border .15s;
-}
-.field input:focus { border-color: var(--lean); }
-.btn-primary {
-  width: 100%; background: var(--lean); color: #000; font-weight: 700;
-  border: none; border-radius: 8px; padding: 13px; font-size: 14px;
-  cursor: pointer; margin-top: 6px; transition: opacity .15s;
-}
-.btn-primary:hover { opacity: .88; }
-.login-err { color: var(--danger); font-size: 12px; margin-top: 14px; text-align: center; display: none; }
 
 /* ── DASHBOARD ──────────────────────────────────────────────── */
-#dashboard { display: none; min-height: 100vh; }
+#dashboard { min-height: 100vh; }
 
 .topbar {
   position: sticky; top: 0; z-index: 200;
@@ -200,25 +168,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
 </head>
 <body>
 
-<!-- ══ LOGIN ══════════════════════════════════════════════════ -->
-<div id="login">
-  <div class="login-card">
-    <div class="login-badge">Board Academy</div>
-    <div class="login-title">CES & LEAN</div>
-    <div class="login-sub">Inteligência Comercial · Visão Gerencial</div>
-    <div class="field">
-      <label>Usuário</label>
-      <input id="lUser" type="text" placeholder="usuario" autocomplete="username">
-    </div>
-    <div class="field">
-      <label>Senha</label>
-      <input id="lPass" type="password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn-primary" id="btnLogin">Entrar</button>
-    <div class="login-err" id="loginErr"></div>
-  </div>
-</div>
-
 <!-- ══ DASHBOARD ══════════════════════════════════════════════ -->
 <div id="dashboard">
   <div class="topbar">
@@ -232,7 +181,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
         <div class="countdown-label">Próx. refresh</div>
         <div class="countdown-val" id="countdown">5:00</div>
       </div>
-      <button class="btn-ghost" id="btnLogout">Sair</button>
     </div>
   </div>
 
@@ -249,65 +197,11 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', system-u
 
 <script>
 /* ── State ──────────────────────────────────────────────── */
-let TOKEN = localStorage.getItem('ba_token') || '';
 const charts = {};
 let refreshHandle, countdownHandle, nextAt = 0;
 
-/* ── Formatters ─────────────────────────────────────────── */
-const fmtBRL = n =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(n);
-const fmtN = n => new Intl.NumberFormat('pt-BR').format(Math.round(n));
-const fmtWeek = w => { const [,m,d] = w.split('-'); return `${d}/${m}`; };
-const fmtMes  = ym => {
-  const [y, m] = ym.split('-');
-  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+m-1] + '/' + y;
-};
-
-/* ── Auth ───────────────────────────────────────────────── */
-document.getElementById('btnLogin').onclick = async () => {
-  const u = document.getElementById('lUser').value.trim();
-  const p = document.getElementById('lPass').value.trim();
-  const btn = document.getElementById('btnLogin');
-  const err = document.getElementById('loginErr');
-  err.style.display = 'none';
-  btn.textContent = 'Entrando…';
-  try {
-    const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: u, senha: p })
-    });
-    const d = await r.json();
-    if (!d.ok) { err.textContent = d.error; err.style.display = 'block'; }
-    else { TOKEN = d.token; localStorage.setItem('ba_token', TOKEN); boot(); }
-  } catch (e) {
-    err.textContent = 'Erro de conexão.';
-    err.style.display = 'block';
-  }
-  btn.textContent = 'Entrar';
-};
-document.getElementById('lPass').onkeydown = e => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); };
-
-document.getElementById('btnLogout').onclick = async () => {
-  await fetch('/api/logout', { method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` } }).catch(() => {});
-  localStorage.removeItem('ba_token');
-  clearTimeout(refreshHandle);
-  clearInterval(countdownHandle);
-  TOKEN = '';
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('login').style.display = 'flex';
-};
 
 document.getElementById('btnRefresh').onclick = () => { clearTimeout(refreshHandle); loadReport(); };
-
-/* ── Boot ───────────────────────────────────────────────── */
-if (TOKEN) boot();
-
-function boot() {
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  loadReport();
-}
 
 /* ── Fetch ──────────────────────────────────────────────── */
 async function loadReport() {
@@ -315,14 +209,13 @@ async function loadReport() {
   clearInterval(countdownHandle);
 
   try {
-    const r = await fetch('/api/report', { headers: { Authorization: `Bearer ${TOKEN}` } });
-    if (r.status === 401) { localStorage.removeItem('ba_token'); location.reload(); return; }
+    const r = await fetch('/api/report');
     const d = await r.json();
     if (!d.ok) throw new Error(d.error);
     render(d);
     scheduleNext();
   } catch (e) {
-    document.getElementById('colLean').innerHTML = `<div class="error-state">⚠ Erro ao carregar: ${e.message}</div>`;
+    document.getElementById('colLean').innerHTML = \`<div class="error-state">⚠ Erro ao carregar: \${e.message}</div>\`;
     scheduleNext();
   }
 }
@@ -334,7 +227,7 @@ function scheduleNext() {
     const diff = Math.max(0, nextAt - Date.now());
     const m = Math.floor(diff / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('countdown').textContent = `${m}:${String(s).padStart(2, '0')}`;
+    document.getElementById('countdown').textContent = \`\${m}:\${String(s).padStart(2, '0')}\`;
     if (diff === 0) clearInterval(countdownHandle);
   }, 1000);
 }
@@ -376,7 +269,7 @@ function mkBar(id, labels, values, color) {
 /* ── Render ─────────────────────────────────────────────── */
 function render(data) {
   const ts = new Date(data.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('topMeta').textContent = `${fmtMes(data.mes)} · Atualizado às ${ts}`;
+  document.getElementById('topMeta').textContent = \`\${fmtMes(data.mes)} · Atualizado às \${ts}\`;
   renderCol('colLean', data.lean, 'lean', 'LEAN Governance');
   renderCol('colCes',  data.ces,  'ces',  'CES');
 }
@@ -386,107 +279,107 @@ function renderCol(id, d, cls, title) {
   const color = cls === 'lean' ? '#F5C518' : '#38BDF8';
   const { criados, ganhos, perdidos } = d;
 
-  col.innerHTML = `
+  col.innerHTML = \`
     <div class="col-head">
       <div class="col-head-left">
-        <div class="col-product-tag tag-${cls}">${title}</div>
-        <div class="col-title">${cls === 'lean' ? 'Lean Governance' : 'CES'}</div>
-        <div class="col-src">Fonte: PipeDrive · Filtro ${cls.toUpperCase()}</div>
+        <div class="col-product-tag tag-\${cls}">\${title}</div>
+        <div class="col-title">\${cls === 'lean' ? 'Lean Governance' : 'CES'}</div>
+        <div class="col-src">Fonte: PipeDrive · Filtro \${cls.toUpperCase()}</div>
       </div>
     </div>
-    <div class="col-divline divline-${cls}"></div>
+    <div class="col-divline divline-\${cls}"></div>
     <br>
 
     <!-- KPI grid -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Leads Criados</div>
-        <div class="kpi-val ${cls}">${fmtN(criados.total)}</div>
-        <div class="kpi-aux">${criados.mediaDia} / dia</div>
+        <div class="kpi-val \${cls}">\${fmtN(criados.total)}</div>
+        <div class="kpi-aux">\${criados.mediaDia} / dia</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Vendas (Produto)</div>
-        <div class="kpi-val ${cls}">${fmtN(ganhos.porProduto.total)}</div>
-        <div class="kpi-aux">${fmtBRL(ganhos.porProduto.receita)}</div>
+        <div class="kpi-val \${cls}">\${fmtN(ganhos.porProduto.total)}</div>
+        <div class="kpi-aux">\${fmtBRL(ganhos.porProduto.receita)}</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Perdidos</div>
-        <div class="kpi-val ${cls}">${fmtN(perdidos.total)}</div>
-        <div class="kpi-aux">${perdidos.mediaDia} / dia</div>
+        <div class="kpi-val \${cls}">\${fmtN(perdidos.total)}</div>
+        <div class="kpi-aux">\${perdidos.mediaDia} / dia</div>
       </div>
     </div>
 
     <!-- ═══ CRIADOS ══════════════════════════════════════════ -->
     <div class="section">
       <div class="section-header">
-        <span class="section-dot dot-${cls}"></span> Leads Criados · Campanha
+        <span class="section-dot dot-\${cls}"></span> Leads Criados · Campanha
       </div>
       <div class="status-row">
         <div class="s-pill pill-open">
-          <span class="num">${fmtN(criados.status.a)}</span> Em aberto
+          <span class="num">\${fmtN(criados.status.a)}</span> Em aberto
         </div>
         <div class="s-pill pill-won">
-          <span class="num">${fmtN(criados.status.g)}</span> Convertidos
+          <span class="num">\${fmtN(criados.status.g)}</span> Convertidos
         </div>
         <div class="s-pill pill-lost">
-          <span class="num">${fmtN(criados.status.p)}</span> Perdidos
+          <span class="num">\${fmtN(criados.status.p)}</span> Perdidos
         </div>
       </div>
       <div class="chart-card">
         <div class="chart-label">Volume por semana · últimas 8 semanas</div>
-        <canvas id="${cls}-criados-sem"></canvas>
+        <canvas id="\${cls}-criados-sem"></canvas>
       </div>
     </div>
 
     <!-- ═══ GANHOS ═══════════════════════════════════════════ -->
     <div class="section">
       <div class="section-header">
-        <span class="section-dot dot-${cls}"></span> Negócios Ganhos
+        <span class="section-dot dot-\${cls}"></span> Negócios Ganhos
       </div>
       <div class="toggle-group">
-        <button class="tog on-${cls}" id="${cls}-tog-prod" onclick="switchGanhos('${cls}','prod')">Por Produto</button>
-        <button class="tog"           id="${cls}-tog-camp" onclick="switchGanhos('${cls}','camp')">Por Campanha</button>
+        <button class="tog on-\${cls}" id="\${cls}-tog-prod" onclick="switchGanhos('\${cls}','prod')">Por Produto</button>
+        <button class="tog"           id="\${cls}-tog-camp" onclick="switchGanhos('\${cls}','camp')">Por Campanha</button>
       </div>
 
-      <div id="${cls}-view-prod">
+      <div id="\${cls}-view-prod">
         <div class="mini-strip">
           <div class="mini-card">
             <div class="mini-label">Vendas</div>
-            <div class="mini-val">${fmtN(ganhos.porProduto.total)}</div>
+            <div class="mini-val">\${fmtN(ganhos.porProduto.total)}</div>
           </div>
           <div class="mini-card">
             <div class="mini-label">Receita</div>
-            <div class="mini-val">${fmtBRL(ganhos.porProduto.receita)}</div>
+            <div class="mini-val">\${fmtBRL(ganhos.porProduto.receita)}</div>
           </div>
           <div class="mini-card">
             <div class="mini-label">Ticket Médio</div>
-            <div class="mini-val">${fmtBRL(ganhos.porProduto.ticket)}</div>
+            <div class="mini-val">\${fmtBRL(ganhos.porProduto.ticket)}</div>
           </div>
         </div>
         <div class="chart-card">
           <div class="chart-label">Vendas por semana · produto vendido</div>
-          <canvas id="${cls}-ganhos-prod-sem"></canvas>
+          <canvas id="\${cls}-ganhos-prod-sem"></canvas>
         </div>
       </div>
 
-      <div id="${cls}-view-camp" style="display:none">
+      <div id="\${cls}-view-camp" style="display:none">
         <div class="mini-strip">
           <div class="mini-card">
             <div class="mini-label">Vendas</div>
-            <div class="mini-val">${fmtN(ganhos.porCampanha.total)}</div>
+            <div class="mini-val">\${fmtN(ganhos.porCampanha.total)}</div>
           </div>
           <div class="mini-card">
             <div class="mini-label">Receita</div>
-            <div class="mini-val">${fmtBRL(ganhos.porCampanha.receita)}</div>
+            <div class="mini-val">\${fmtBRL(ganhos.porCampanha.receita)}</div>
           </div>
           <div class="mini-card">
             <div class="mini-label">Ticket Médio</div>
-            <div class="mini-val">${fmtBRL(ganhos.porCampanha.ticket)}</div>
+            <div class="mini-val">\${fmtBRL(ganhos.porCampanha.ticket)}</div>
           </div>
         </div>
         <div class="chart-card">
           <div class="chart-label">Vendas por semana · origem da campanha</div>
-          <canvas id="${cls}-ganhos-camp-sem"></canvas>
+          <canvas id="\${cls}-ganhos-camp-sem"></canvas>
         </div>
       </div>
     </div>
@@ -498,49 +391,49 @@ function renderCol(id, d, cls, title) {
       </div>
       <div class="chart-card">
         <div class="chart-label">Volume por semana · últimas 8 semanas</div>
-        <canvas id="${cls}-perdidos-sem"></canvas>
+        <canvas id="\${cls}-perdidos-sem"></canvas>
       </div>
       <div class="chart-card">
         <div class="chart-label">Top 10 motivos de perda · mês atual</div>
-        <div class="motivos-list" id="${cls}-motivos"></div>
+        <div class="motivos-list" id="\${cls}-motivos"></div>
       </div>
     </div>
-  `;
+  \`;
 
   /* ── Charts ── */
   const wLabels = criados.porSemana.map(x => fmtWeek(x.w));
 
-  mkBar(`${cls}-criados-sem`,      wLabels, criados.porSemana.map(x => x.v),          color);
-  mkBar(`${cls}-ganhos-prod-sem`,  wLabels, ganhos.porProduto.porSemana.map(x => x.v), color);
-  mkBar(`${cls}-ganhos-camp-sem`,  wLabels, ganhos.porCampanha.porSemana.map(x => x.v), color);
-  mkBar(`${cls}-perdidos-sem`,     wLabels, perdidos.porSemana.map(x => x.v),          '#f87171');
+  mkBar(\`\${cls}-criados-sem\`,      wLabels, criados.porSemana.map(x => x.v),          color);
+  mkBar(\`\${cls}-ganhos-prod-sem\`,  wLabels, ganhos.porProduto.porSemana.map(x => x.v), color);
+  mkBar(\`\${cls}-ganhos-camp-sem\`,  wLabels, ganhos.porCampanha.porSemana.map(x => x.v), color);
+  mkBar(\`\${cls}-perdidos-sem\`,     wLabels, perdidos.porSemana.map(x => x.v),          '#f87171');
 
   /* ── Motivos ── */
-  const motEl = document.getElementById(`${cls}-motivos`);
+  const motEl = document.getElementById(\`\${cls}-motivos\`);
   if (!perdidos.topMotivos.length) {
     motEl.innerHTML = '<div style="color:var(--muted);font-size:12px">Sem dados no período.</div>';
   } else {
-    motEl.innerHTML = perdidos.topMotivos.map(m => `
+    motEl.innerHTML = perdidos.topMotivos.map(m => \`
       <div class="motivo-row">
-        <div class="motivo-name" title="${escHtml(m.m)}">${escHtml(m.m)}</div>
+        <div class="motivo-name" title="\${escHtml(m.m)}">\${escHtml(m.m)}</div>
         <div class="motivo-track">
-          <div class="motivo-fill fill-${cls}" style="width:${m.pct}%"></div>
+          <div class="motivo-fill fill-\${cls}" style="width:\${m.pct}%"></div>
         </div>
-        <div class="motivo-pct">${m.pct}%</div>
-        <div class="motivo-count">${m.c}</div>
+        <div class="motivo-pct">\${m.pct}%</div>
+        <div class="motivo-count">\${m.c}</div>
       </div>
-    `).join('');
+    \`).join('');
   }
 }
 
 function switchGanhos(cls, view) {
   const isProd = view === 'prod';
-  document.getElementById(`${cls}-view-prod`).style.display = isProd ? 'block' : 'none';
-  document.getElementById(`${cls}-view-camp`).style.display = isProd ? 'none'  : 'block';
-  const btnP = document.getElementById(`${cls}-tog-prod`);
-  const btnC = document.getElementById(`${cls}-tog-camp`);
-  btnP.className = `tog${isProd ? ` on-${cls}` : ''}`;
-  btnC.className = `tog${!isProd ? ` on-${cls}` : ''}`;
+  document.getElementById(\`\${cls}-view-prod\`).style.display = isProd ? 'block' : 'none';
+  document.getElementById(\`\${cls}-view-camp\`).style.display = isProd ? 'none'  : 'block';
+  const btnP = document.getElementById(\`\${cls}-tog-prod\`);
+  const btnC = document.getElementById(\`\${cls}-tog-camp\`);
+  btnP.className = \`tog\${isProd ? \` on-\${cls}\` : ''}\`;
+  btnC.className = \`tog\${!isProd ? \` on-\${cls}\` : ''}\`;
 }
 
 function escHtml(s) {
