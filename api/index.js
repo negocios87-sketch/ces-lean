@@ -42,29 +42,32 @@ function classifyOrigem(v) {
 const toYM  = d => d ? String(d).substring(0,7) : null;
 const toYMD = d => d ? String(d).substring(0,10) : null;
 
+// Semana: Quinta → Quarta
 function weekStart(dateStr) {
   if (!dateStr) return null;
   const d = new Date(String(dateStr).substring(0,10)+'T00:00:00Z');
-  const day = d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() - (day===0?6:day-1));
+  const day = d.getUTCDay(); // 0=Dom,1=Seg,...,4=Qui,5=Sex,6=Sab
+  const daysFromThu = (day - 4 + 7) % 7; // dias desde a última quinta
+  d.setUTCDate(d.getUTCDate() - daysFromThu);
   return d.toISOString().substring(0,10);
 }
 
-// Retorna as últimas N semanas COMPLETAS (ignora a semana atual)
+// Retorna as últimas N semanas COMPLETAS (Qui→Qua), ignorando a semana atual
 function getWeeks(n=8) {
   const now = new Date();
   const day = now.getUTCDay();
-  // Segunda da semana atual
-  const currMon = new Date(now);
-  currMon.setUTCDate(now.getUTCDate() - (day===0?6:day-1));
-  currMon.setUTCHours(0,0,0,0);
-  // Base = segunda da última semana COMPLETA
-  const base = new Date(currMon);
-  base.setUTCDate(currMon.getUTCDate()-7);
+  // Quinta da semana atual
+  const daysFromThu = (day - 4 + 7) % 7;
+  const currThu = new Date(now);
+  currThu.setUTCDate(now.getUTCDate() - daysFromThu);
+  currThu.setUTCHours(0,0,0,0);
+  // Base = quinta da última semana COMPLETA
+  const base = new Date(currThu);
+  base.setUTCDate(currThu.getUTCDate() - 7);
   const weeks = [];
   for (let i=n-1;i>=0;i--) {
     const d = new Date(base);
-    d.setUTCDate(base.getUTCDate()-i*7);
+    d.setUTCDate(base.getUTCDate() - i*7);
     weeks.push(d.toISOString().substring(0,10));
   }
   return weeks;
@@ -118,7 +121,7 @@ app.get('/api/report', async (req,res) => {
     const empty = () => ({
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
-      camp:    { mes:{t:0,rev:0,dia:{}}, sem:{} },
+      camp:    { mes:{t:0,rev:0,dia:{},deals:[]}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{}}, sem:{} },
     });
     const D = {LEAN:empty(),CES:empty()};
@@ -141,8 +144,15 @@ app.get('/api/report', async (req,res) => {
         if (deal.status==='won'&&val>0&&prods.length) {
           for (const p of prods) {
             const nome=p==='LEAN'?'Lean Governance':'CES';
-            if (!dc.mes.produtosVendidos[nome]) dc.mes.produtosVendidos[nome]={t:0,rev:0};
+            if (!dc.mes.produtosVendidos[nome]) dc.mes.produtosVendidos[nome]={t:0,rev:0,deals:[]};
             dc.mes.produtosVendidos[nome].t++;dc.mes.produtosVendidos[nome].rev+=val;
+            dc.mes.produtosVendidos[nome].deals.push({
+              campanha: String(deal[CAMPAIGN_FIELD]||'—').trim(),
+              dataGanho: deal.won_time?deal.won_time.substring(0,10):'—',
+              proprietario: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+              valor: val,
+              produto: String(deal[PRODUCT_FIELD]||'—'),
+            });
           }
         }
       }
@@ -194,6 +204,13 @@ app.get('/api/report', async (req,res) => {
           gc.mes.t++;gc.mes.rev+=val;
           if (!gc.mes.dia[_d]) gc.mes.dia[_d]={t:0,r:0};
           gc.mes.dia[_d].t++;gc.mes.dia[_d].r+=val;
+          gc.mes.deals.push({
+            campanha: String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho: deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            valor: val,
+            produto: String(deal[PRODUCT_FIELD]||'—'),
+          });
         }
         if (wSet.has(_w)) {if (!gc.sem[_w]) gc.sem[_w]={t:0,r:0};gc.sem[_w].t++;gc.sem[_w].r+=val;}
       }
