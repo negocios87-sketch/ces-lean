@@ -132,6 +132,69 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
   .kpi5,.kpi3{grid-template-columns:1fr 1fr}
   .charts-2,.side-row{grid-template-columns:1fr}
 }
+
+/* ── SNAPSHOT / COMPARAÇÃO / HISTÓRICO ── */
+.tbtn-snap{background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.4);border-radius:6px;color:#f5c518;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s}
+.tbtn-snap:hover{background:rgba(245,197,24,.28)}
+.tbtn-cmp{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);border-radius:6px;color:#4ade80;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s}
+.tbtn-cmp:hover{background:rgba(74,222,128,.22)}
+.tbtn-cmp:disabled{opacity:.35;cursor:default}
+.tbtn-clrcmp{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);border-radius:6px;color:#f87171;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s;display:none}
+.tbtn-clrcmp:hover{background:rgba(248,113,113,.22)}
+
+/* Modal de comparação */
+.cmp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9800;display:none;align-items:center;justify-content:center}
+.cmp-overlay.open{display:flex}
+.cmp-modal{background:var(--surface);border-radius:14px;padding:32px 28px;width:420px;max-width:92vw;box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.cmp-modal h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+.cmp-modal p{font-size:.78rem;color:var(--muted);margin-bottom:20px}
+.cmp-drop-area{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:16px}
+.cmp-drop-area:hover{border-color:var(--lean)}
+.cmp-drop-area p{color:var(--muted);font-size:.82rem;margin:0}
+.cmp-drop-area input{display:none}
+.cmp-modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.cmp-btn{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer}
+.cmp-btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted)}
+
+/* Indicador de comparação ativa */
+.cmp-banner{background:linear-gradient(90deg,#166534,#15803d);color:#fff;padding:8px 24px;font-size:.75rem;font-weight:600;letter-spacing:.04em;display:none;align-items:center;justify-content:space-between}
+.cmp-banner.on{display:flex}
+.cmp-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer}
+
+/* Delta badges nos KPIs */
+.kpi-delta{font-size:.68rem;font-weight:700;margin-top:4px;display:flex;align-items:center;gap:4px}
+.delta-up{color:#4ade80}
+.delta-dn{color:#f87171}
+.delta-eq{color:var(--muted)}
+
+/* Delta nos motivos */
+.motivo-delta{width:42px;text-align:right;font-size:.68rem;font-weight:700}
+
+/* Histórico overlay */
+.hist-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9700;display:none;align-items:flex-start;justify-content:center;padding-top:48px}
+.hist-overlay.open{display:flex}
+.hist-modal{background:var(--bg);border-radius:14px;width:720px;max-width:95vw;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+.hist-header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+.hist-header h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#fff}
+.hist-header button{background:none;border:none;color:rgba(255,255,255,.6);font-size:1.2rem;cursor:pointer;padding:4px 8px}
+.hist-list{overflow-y:auto;flex:1;padding:16px}
+.hist-empty{padding:40px;text-align:center;color:var(--muted);font-size:.85rem}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.hist-item-left h4{font-family:'Fraunces',serif;font-size:.95rem;font-weight:600;color:var(--navy)}
+.hist-item-left p{font-size:.72rem;color:var(--muted);margin-top:2px}
+.hist-item-btns{display:flex;gap:8px}
+.hist-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer}
+.hist-btn-del{background:transparent;border:1px solid var(--border);color:var(--rust)}
+.hist-btn-pdf{background:var(--gold);color:#fff}
+
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  body{background:#fff!important}
+  .topbar,.cmp-banner,#pToolbar,.state-wrap{display:none!important}
+  .page{max-width:100%!important;padding:0!important}
+  .print-page-break{page-break-before:always}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
 </style>
 </head>
 <body>
@@ -149,7 +212,43 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
   </div>
   <div class="tb-right">
     <span class="tb-meta" id="tbMeta">—</span>
+    <button class="tbtn" onclick="openHistorico()">📋 Histórico</button>
+    <button class="tbtn-snap" onclick="doSnapshot()">📸 Snapshot</button>
+    <button class="tbtn-cmp" id="btnComparar" onclick="openComparar()" disabled>⇄ Comparar</button>
+    <button class="tbtn-clrcmp" id="btnLimparCmp" onclick="limparComparacao()">✕ Comparação</button>
     <button class="tbtn" id="btnRefresh" onclick="doRefresh()">↺ Atualizar</button>
+  </div>
+</div>
+
+<!-- Banner comparação ativa -->
+<div class="cmp-banner" id="cmpBanner">
+  <span id="cmpBannerTxt">Comparando com: —</span>
+  <button onclick="limparComparacao()">✕ Limpar</button>
+</div>
+
+<!-- Modal comparar -->
+<div class="cmp-overlay" id="cmpOverlay">
+  <div class="cmp-modal">
+    <h3>Carregar Snapshot para Comparar</h3>
+    <p>Selecione um arquivo <strong>.json</strong> salvo anteriormente</p>
+    <div class="cmp-drop-area" onclick="document.getElementById('cmpFileInput').click()">
+      <p>📂 Clique para selecionar o arquivo JSON</p>
+      <input type="file" id="cmpFileInput" accept=".json" onchange="onCmpFile(event)">
+    </div>
+    <div class="cmp-modal-btns">
+      <button class="cmp-btn cmp-btn-cancel" onclick="closeCmpModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal histórico -->
+<div class="hist-overlay" id="histOverlay">
+  <div class="hist-modal">
+    <div class="hist-header">
+      <h3>📋 Histórico de Snapshots</h3>
+      <button onclick="closeHistorico()">✕</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
   </div>
 </div>
 
@@ -215,7 +314,20 @@ function mkBar(id,labels,values,col,opts={}){
   const ctx=document.getElementById(id);if(!ctx)return;
   const isWeekly=opts.weekly||false;
   charts[id]=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[{data:values,backgroundColor:col+'28',borderColor:col,borderWidth:1.5,borderRadius:4}]},
+    data:{labels,datasets:[
+      ...(snapItems&&snapItems.length?[{
+        data:snapItems.map(x=>x.pct||0),
+        borderColor:'#aaaaaa',backgroundColor:'transparent',
+        borderWidth:1.5,borderDash:[4,3],fill:false,tension:.28,
+        pointRadius:2,pointBackgroundColor:'#aaaaaa',
+        datalabels:{display:false},
+      }]:[]),
+      {
+        data:values,
+        borderColor:col,backgroundColor:col+'18',
+        borderWidth:2,fill:false,tension:.28,
+        pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
+      }]},
     options:{responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:isWeekly?30:22}},
       plugins:{
@@ -255,7 +367,7 @@ function mkStackedBar(id,labels,datasets){
 }
 
 /* ── Score line (com banda ICP e tooltip com volume) ── */
-function mkScoreLine(id,items,col){
+function mkScoreLine(id,items,col,snapItems){
   dk(id);
   const ctx=document.getElementById(id);if(!ctx)return;
   const labels=(items||[]).map(x=>x.label);
@@ -455,7 +567,8 @@ function render(){
 
     <div class="kpi-row kpi5">
       <div class="kpi"><div class="kpi-accent" style="background:${col}"></div>
-        <div class="lbl">Total criado no mês</div><div class="val">${fmtN(criados.total)}</div><div class="sub">${criados.mediaDia} por dia</div></div>
+        <div class="lbl">Total criado no mês</div><div class="val">${fmtN(criados.total)}</div><div class="sub">${criados.mediaDia} por dia</div>
+        ${SNAP&&SNAP.data?deltaHtml(criados.total,SNAP.data[PROD]?.criados?.total):''}</div>
       <div class="kpi"><div class="kpi-accent" style="background:var(--navy)"></div>
         <div class="lbl">Em Aberto</div><div class="val" style="color:var(--navy)">${fmtN(criados.status.a)}</div><div class="sub">${criados.total>0?((criados.status.a/criados.total)*100).toFixed(0):'0'}% do total</div></div>
       <div class="kpi"><div class="kpi-accent" style="background:var(--sage)"></div>
@@ -482,8 +595,10 @@ function render(){
     <!-- Visão produto -->
     <div id="view-prod">
       <div class="kpi-row kpi3">
-        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Vendas (produto)</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div></div>
-        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porProduto.receita)}</div><div class="sub">${brl(ganhos.porProduto.receita)}</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Vendas (produto)</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div>
+          ${SNAP&&SNAP.data?deltaHtml(ganhos.porProduto.total,SNAP.data[PROD]?.ganhos?.porProduto?.total):''}</div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porProduto.receita)}</div><div class="sub">${brl(ganhos.porProduto.receita)}</div>
+          ${SNAP&&SNAP.data?deltaHtml(ganhos.porProduto.receita,SNAP.data[PROD]?.ganhos?.porProduto?.receita):''}</div>
         <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div><div class="lbl">Ticket Médio</div><div class="val" style="color:${col}">${ganhos.porProduto.ticket>0?brlK(ganhos.porProduto.ticket):'—'}</div><div class="sub">por fechamento</div></div>
       </div>
       <div class="charts-2">
@@ -564,14 +679,18 @@ function render(){
 
   /* Motivos */
   const motEl=document.getElementById('motivos-list');
+  const snapMotivos=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
   motEl.innerHTML=perdidos.topMotivos.length
-    ?perdidos.topMotivos.map(m=>`
-        <div class="motivo-row">
+    ?perdidos.topMotivos.map(m=>{
+        const snapM=snapMotivos.find(s=>s.m===m.m);
+        const snapPct=snapM?snapM.pct:null;
+        return`<div class="motivo-row">
           <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
           <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
           <div class="motivo-pct">${m.pct}%</div>
           <div class="motivo-count">${m.c}</div>
-        </div>`).join('')
+          ${SNAP&&SNAP.data?ppDelta(m.pct,snapPct):''}
+        </div>`;}).join('')
     :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados no período.</div>';
 
   /* Charts */
@@ -581,7 +700,8 @@ function render(){
     {label:'Perdido', data:criados.porDia.map(x=>x.p),backgroundColor:'#c0533a55',borderWidth:0,borderRadius:2},
   ]);
   mkBar('ch-cri-sem', wLabels,criados.porSemana.map(x=>x.v),col,{weekly:true});
-  mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col);
+  const snapScore=SNAP&&SNAP.data?SNAP.data[PROD]?.criados?.scoreFaixas||[]:[];
+  mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col,snapScore.length?snapScore:null);
   mkBar('ch-gp-dia',  dLabels,ganhos.porProduto.porDia.map(x=>x.v),col,{maxTicks:20});
   mkBar('ch-gp-sem',  wLabels,ganhos.porProduto.porSemana.map(x=>x.v),col,{weekly:true});
   mkBar('ch-gc-dia',  dLabels,ganhos.porCampanha.porDia.map(x=>x.v),col,{maxTicks:20});
@@ -611,6 +731,224 @@ function toggleDeals(id){
   if(arrow)arrow.textContent=open?'▼':'▶';
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   SNAPSHOT · COMPARAÇÃO · HISTÓRICO
+   ════════════════════════════════════════════════════════════ */
+let SNAP = null; // snapshot carregado para comparação
+
+/* ── Snapshot: baixa JSON ── */
+function doSnapshot(){
+  if(!DATA){alert('Carregue os dados primeiro.');return;}
+  const now = new Date();
+  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const nome = `${dias[now.getDay()]}, ${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const payload = { nome, criadoEm: now.toISOString(), produto: PROD, data: DATA };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `snapshot-${PROD}-${now.toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── Modal comparar ── */
+function openComparar(){ document.getElementById('cmpOverlay').classList.add('open'); }
+function closeCmpModal(){ document.getElementById('cmpOverlay').classList.remove('open'); }
+
+function onCmpFile(e){
+  const file = e.target.files[0]; if(!file)return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const json = JSON.parse(ev.target.result);
+      if(!json.data){ alert('Arquivo inválido.'); return; }
+      SNAP = json;
+      closeCmpModal();
+      aplicarComparacao();
+    }catch(err){ alert('Erro ao ler arquivo: '+err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value=''; // reset input
+}
+
+function aplicarComparacao(){
+  if(!SNAP)return;
+  document.getElementById('cmpBanner').classList.add('on');
+  document.getElementById('cmpBannerTxt').textContent = `Comparando com: ${SNAP.nome}`;
+  document.getElementById('btnLimparCmp').style.display='inline-block';
+  render(); // re-render com SNAP disponível
+}
+
+function limparComparacao(){
+  SNAP=null;
+  document.getElementById('cmpBanner').classList.remove('on');
+  document.getElementById('btnLimparCmp').style.display='none';
+  render();
+}
+
+/* ── Helpers de delta ── */
+function deltaHtml(atual, anterior){
+  if(!anterior||anterior===0) return '';
+  const pct = ((atual-anterior)/anterior*100);
+  const abs  = Math.abs(pct).toFixed(0)+'%';
+  if(Math.abs(pct)<0.5) return `<span class="kpi-delta delta-eq">= mesmo</span>`;
+  const up = pct>0;
+  return `<span class="kpi-delta ${up?'delta-up':'delta-dn'}">${up?'▲':'▼'} ${abs} vs snap</span>`;
+}
+
+function ppDelta(atualPct, anteriorPct){
+  if(anteriorPct===undefined||anteriorPct===null) return '';
+  const diff = atualPct - anteriorPct;
+  if(Math.abs(diff)<0.5) return `<span class="motivo-delta delta-eq">=</span>`;
+  const up = diff>0;
+  return `<span class="motivo-delta ${up?'delta-up':'delta-dn'}">${up?'+':''}${diff.toFixed(0)}pp</span>`;
+}
+
+/* ── Histórico ── */
+function openHistorico(){
+  renderHistorico();
+  document.getElementById('histOverlay').classList.add('open');
+}
+function closeHistorico(){ document.getElementById('histOverlay').classList.remove('open'); }
+
+function getSnaps(){
+  try{ return JSON.parse(localStorage.getItem('ba_snaps')||'[]'); }catch{ return []; }
+}
+function saveSnaps(arr){ localStorage.setItem('ba_snaps',JSON.stringify(arr)); }
+
+function renderHistorico(){
+  const snaps = getSnaps();
+  const el = document.getElementById('histList');
+  if(!snaps.length){
+    el.innerHTML='<div class="hist-empty">Nenhum snapshot salvo.<br><small>Use o botão 📸 Snapshot para gravar.</small></div>';
+    return;
+  }
+  el.innerHTML = snaps.slice().reverse().map((s,ri)=>{
+    const i = snaps.length-1-ri;
+    return `<div class="hist-item">
+      <div class="hist-item-left">
+        <h4>${esc(s.nome)}</h4>
+        <p>Produto: ${(s.produto||'—').toUpperCase()} · ${new Date(s.criadoEm).toLocaleString('pt-BR')}</p>
+      </div>
+      <div class="hist-item-btns">
+        <button class="hist-btn hist-btn-pdf" onclick="printSnapshot(${i})">🖨 PDF</button>
+        <button class="hist-btn" onclick="downloadSnap(${i})">⬇ JSON</button>
+        <button class="hist-btn hist-btn-del" onclick="deleteSnap(${i})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteSnap(i){
+  if(!confirm('Deletar este snapshot?'))return;
+  const arr=getSnaps(); arr.splice(i,1); saveSnaps(arr); renderHistorico();
+}
+
+function downloadSnap(i){
+  const s=getSnaps()[i]; if(!s)return;
+  const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`snapshot-${(s.produto||'snap')}-${s.criadoEm.slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+function printSnapshot(i){
+  const s=getSnaps()[i]; if(!s)return;
+  const win=window.open('','_blank','width=900,height=700');
+  win.document.write(buildPrintHtml(s));
+  win.document.close();
+  win.onload=()=>{win.print();};
+}
+
+function buildPrintHtml(snap){
+  const d=snap.data; const p=snap.produto||'lean';
+  const col=p==='lean'?'#4a6fa5':'#0e7490';
+  const lbl=p==='lean'?'Lean Governance':'CES';
+  const fmtM2=ym=>{if(!ym)return'—';const[y,mo]=ym.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y;};
+  const brl2=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+  const pd=d[p]; if(!pd)return'<p>Dados não encontrados.</p>';
+  const {criados,ganhos,perdidos}=pd;
+
+  const kpiBox=(lbl,val,sub)=>`<div style="background:#fff;border:1px solid #e0d9d0;border-radius:8px;padding:14px 12px;min-width:140px;flex:1">
+    <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:#8a8277;margin-bottom:6px">${lbl}</div>
+    <div style="font-family:'Georgia',serif;font-size:1.5rem;font-weight:700;color:#1c2b3a">${val}</div>
+    <div style="font-size:.68rem;color:#8a8277;margin-top:4px">${sub}</div>
+  </div>`;
+
+  const motivosHtml=perdidos.topMotivos.map(m=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <div style="width:140px;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.m}</div>
+      <div style="flex:1;background:#e0d9d0;border-radius:3px;height:5px"><div style="width:${m.pct}%;height:5px;border-radius:3px;background:${col}"></div></div>
+      <div style="width:30px;text-align:right;font-size:.7rem;color:#8a8277">${m.pct}%</div>
+      <div style="width:24px;text-align:right;font-size:.78rem;font-weight:600">${m.c}</div>
+    </div>`).join('');
+
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Snapshot · ${snap.nome}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#f2ede6;color:#1c2020;font-size:13px;padding:16px}
+    @page{size:A4 portrait;margin:10mm}
+    @media print{body{background:#fff!important}*{-webkit-print-color-adjust:exact!important}}
+    .page-break{page-break-before:always;padding-top:16px}
+    h1{font-family:'Georgia',serif;font-size:1.4rem;font-weight:700;color:#1c2b3a;margin-bottom:4px}
+    h2{font-family:'Georgia',serif;font-size:1rem;font-weight:700;color:#1c2b3a;margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid ${col}}
+    .meta{font-size:.72rem;color:#8a8277;margin-bottom:20px}
+    .kpis{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .card{background:#fff;border:1px solid #e0d9d0;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+  </style></head><body>
+  <h1>${lbl} · ${fmtM2(d.mes)}</h1>
+  <div class="meta">Snapshot gravado em: ${snap.nome} · ${new Date(snap.criadoEm).toLocaleString('pt-BR')}</div>
+
+  <!-- PÁGINA 1: CRIADOS -->
+  <h2>Leads Criados · Data de Criação</h2>
+  <div class="kpis">
+    ${kpiBox('Total Criados',criados.total.toLocaleString('pt-BR'),criados.mediaDia+' por dia')}
+    ${kpiBox('Em Aberto',criados.status.a.toLocaleString('pt-BR'),((criados.status.a/criados.total||0)*100).toFixed(0)+'% do total')}
+    ${kpiBox('Ganhos',criados.status.g.toLocaleString('pt-BR'),'dos criados')}
+    ${kpiBox('Perdidos',criados.status.p.toLocaleString('pt-BR'),'dos criados')}
+    ${kpiBox('Conversão',criados.taxaConv+'%','ganhos ÷ criados')}
+  </div>
+
+  <!-- PÁGINA 2: GANHOS -->
+  <div class="page-break">
+  <h2>Negócios Ganhos · Data de Ganho</h2>
+  <div class="kpis">
+    ${kpiBox('Vendas',ganhos.porProduto.total.toLocaleString('pt-BR'),'negócios ganhos')}
+    ${kpiBox('Receita',brl2(ganhos.porProduto.receita),'total')}
+    ${kpiBox('Ticket Médio',ganhos.porProduto.ticket>0?brl2(ganhos.porProduto.ticket):'—','por fechamento')}
+  </div>
+  <h2>Ganhos por Campanha</h2>
+  <div class="kpis">
+    ${kpiBox('Vendas',ganhos.porCampanha.total.toLocaleString('pt-BR'),'via campanha')}
+    ${kpiBox('Receita',brl2(ganhos.porCampanha.receita),'total')}
+    ${kpiBox('Ticket Médio',ganhos.porCampanha.ticket>0?brl2(ganhos.porCampanha.ticket):'—','por fechamento')}
+  </div>
+  </div>
+
+  <!-- PÁGINA 3: PERDIDOS -->
+  <div class="page-break">
+  <h2>Negócios Perdidos · Data de Perda</h2>
+  <div class="kpis">
+    ${kpiBox('Total Perdidos',perdidos.total.toLocaleString('pt-BR'),perdidos.mediaDia+' por dia')}
+  </div>
+  <h2>Top Motivos de Perda</h2>
+  <div class="card">${motivosHtml||'<p style="color:#8a8277;font-size:.82rem">Sem dados.</p>'}</div>
+  </div>
+
+  </body></html>`;
+}
+
+/* ── Atualizar botão Comparar ── */
+function updateCmpBtn(){
+  const btn=document.getElementById('btnComparar');
+  if(btn) btn.disabled=false;
+}
+
 async function loadData(){
   const err=document.getElementById('errBanner');
   err.style.display='none';
@@ -618,7 +956,7 @@ async function loadData(){
     const r=await fetch('/api/report');
     const j=await r.json();
     if(!j.ok)throw new Error(j.error);
-    DATA=j;render();
+    DATA=j;render();updateCmpBtn();
   }catch(e){
     err.textContent=`Erro ao carregar: ${e.message}`;
     err.style.display='block';
