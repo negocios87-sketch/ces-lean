@@ -6,26 +6,33 @@
 <title>CES & LEAN · Board Academy</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f2ede6;--surface:#fff;--navy:#1c2b3a;--navyL:#2d4459;
+  --bg:#f2ede6;--surface:#fff;--navy:#1c2b3a;
   --gold:#b8873f;--goldP:#f5e9d6;--sage:#4a7c6a;--rust:#c0533a;
   --muted:#8a8277;--border:#e0d9d0;--text:#1c2020;
   --radius:8px;--shadow:0 1px 3px rgba(28,32,32,.06),0 4px 16px rgba(28,32,32,.06);
+  /* LEAN = royal blue */
+  --lean:#1d4ed8;--lean2:#3b82f6;--leanBg:#eff6ff;
+  /* CES = petróleo */
+  --ces:#0e7490;--ces2:#06b6d4;--cesBg:#ecfeff;
 }
 html{font-size:14px}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 
 /* ── TOPBAR ── */
-.topbar{background:var(--navy);padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.topbar{background:var(--navy);padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .tb-left{display:flex;align-items:center;gap:20px}
-.tb-logo{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:var(--gold);letter-spacing:.05em}
+.tb-logo{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--gold);letter-spacing:.05em}
+.tb-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:300;color:rgba(255,255,255,.5);letter-spacing:.02em}
 .tb-sep{width:1px;height:30px;background:rgba(255,255,255,.12)}
 .prod-toggle{display:flex;gap:3px;padding:10px 0}
-.ptog{background:none;border:none;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;padding:6px 18px;cursor:pointer;border-radius:6px;letter-spacing:.05em;text-transform:uppercase;transition:all .15s}
-.ptog:hover{color:rgba(255,255,255,.8)}
-.ptog.active{background:var(--gold);color:var(--navy)}
+.ptog{background:none;border:none;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;padding:6px 20px;cursor:pointer;border-radius:6px;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.ptog:hover{color:rgba(255,255,255,.85)}
+.ptog.lean{background:var(--lean);color:#fff}
+.ptog.ces{background:var(--ces);color:#fff}
 .tb-right{display:flex;align-items:center;gap:12px}
 .tb-meta{font-size:.68rem;color:rgba(255,255,255,.32);letter-spacing:.03em}
 .tbtn{background:none;border:1px solid rgba(255,255,255,.18);border-radius:6px;color:rgba(255,255,255,.7);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;padding:6px 14px;cursor:pointer;transition:all .15s}
@@ -34,46 +41,58 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ── PAGE ── */
 .page{max-width:1200px;margin:0 auto;padding:28px 24px 64px}
-.ph-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;padding-bottom:18px;border-bottom:1.5px solid var(--border)}
-.ph-eye{font-size:.64rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
-.ph-ttl{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:600;color:var(--navy);line-height:1.1}
-.ph-sub{font-size:.74rem;color:var(--muted);margin-top:5px}
 
-/* ── SECTIONS ── */
-.sec-lbl{font-size:.63rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
-.sec-ttl{font-family:'Fraunces',serif;font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-top:32px}
+/* ── HEADER DO PRODUTO ── */
+.ph-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border)}
+.ph-eye{font-size:.64rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+.ph-ttl{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;color:var(--navy);line-height:1.1}
+.ph-sub{font-size:.8rem;color:var(--muted);margin-top:6px}
+.ph-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.badge-lean{background:var(--leanBg);color:var(--lean)}
+.badge-ces{background:var(--cesBg);color:var(--ces)}
+
+/* ── SECTION TITLES ── */
+.sec-block{margin-top:36px;margin-bottom:16px}
+.sec-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.sec-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1.1}
+.sec-date-tag{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-left:10px;vertical-align:middle;position:relative;top:-2px}
+.tag-ganho{background:#dcfce7;color:#166534}
+.tag-perda{background:#fee2e2;color:#991b1b}
+.tag-criado{background:var(--leanBg);color:var(--lean)}
+.sec-divider{height:2px;border-radius:2px;margin-top:10px}
+.div-lean{background:linear-gradient(90deg,var(--lean),var(--lean2))}
+.div-ces{background:linear-gradient(90deg,var(--ces),var(--ces2))}
+.div-ganho{background:linear-gradient(90deg,#166534,#4ade80)}
+.div-perda{background:linear-gradient(90deg,#991b1b,#f87171)}
 
 /* ── KPIs ── */
-.kpi-row{display:grid;gap:10px;margin-bottom:20px}
+.kpi-row{display:grid;gap:10px;margin-bottom:18px}
 .kpi5{grid-template-columns:repeat(5,1fr)}
 .kpi4{grid-template-columns:repeat(4,1fr)}
 .kpi3{grid-template-columns:repeat(3,1fr)}
 .kpi2{grid-template-columns:repeat(2,1fr)}
 .kpi1{grid-template-columns:1fr}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--gold);opacity:0;transition:opacity .3s}
-.kpi:hover::before{opacity:1}
+.kpi-accent{position:absolute;top:0;left:0;right:0;height:3px}
 .kpi .lbl{font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.kpi .val{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:600;color:var(--navy);line-height:1}
+.kpi .val{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:700;color:var(--navy);line-height:1}
 .kpi .sub{font-size:.69rem;color:var(--muted);margin-top:5px}
 
 /* ── CHARTS ── */
 .charts-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .charts-1{margin-bottom:16px}
 .ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 14px;box-shadow:var(--shadow)}
-.ccard-ttl{font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.ccard-ttl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .cwrap{position:relative;height:170px}
 .cwrap.md{height:200px}
-.cwrap.sm{height:140px}
 
 /* ── GANHOS TOGGLE ── */
 .gtog-row{display:flex;gap:6px;margin-bottom:16px}
-.gtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
+.gtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
 .gtog:hover{border-color:var(--navy);color:var(--navy)}
 .gtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
 
-/* ── TABELA ── */
+/* ── TABELAS ── */
 .twrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;margin-bottom:16px}
 table{width:100%;border-collapse:collapse;font-size:.8rem}
 thead{background:var(--navy)}
@@ -82,11 +101,23 @@ thead th:not(:first-child){text-align:right}
 tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--bg)}
-tbody td{padding:9px 14px;color:var(--text);white-space:nowrap}
+tbody td{padding:9px 14px;white-space:nowrap}
 tbody td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
-tfoot td{padding:9px 14px;font-weight:600;color:var(--navy);background:var(--goldP);font-size:.8rem;border-top:1.5px solid var(--border)}
+tfoot td{padding:9px 14px;font-weight:700;color:var(--navy);background:var(--goldP);border-top:1.5px solid var(--border)}
 tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .td-name{font-weight:500;color:var(--navy)}
+.td-pct{font-weight:700}
+
+/* ── ORIGEM TEMPORAL ── */
+.ot-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px}
+.ot-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.ot-rows{display:flex;flex-direction:column;gap:10px}
+.ot-row{display:flex;align-items:center;gap:12px}
+.ot-label{width:160px;flex-shrink:0;font-size:.8rem;color:var(--text)}
+.ot-track{flex:1;background:var(--border);border-radius:3px;height:7px}
+.ot-fill{height:7px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.ot-val{width:32px;text-align:right;font-size:.8rem;font-weight:700;color:var(--navy)}
+.ot-pct{width:36px;text-align:right;font-size:.72rem;color:var(--muted)}
 
 /* ── MOTIVOS ── */
 .motivos{display:flex;flex-direction:column;gap:9px}
@@ -117,9 +148,11 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
   <div class="tb-left">
     <span class="tb-logo">Board Academy</span>
     <div class="tb-sep"></div>
+    <span class="tb-title">Inteligência Comercial</span>
+    <div class="tb-sep"></div>
     <div class="prod-toggle">
-      <button class="ptog active" id="togLean" onclick="setProduct('lean')">LEAN</button>
-      <button class="ptog"        id="togCes"  onclick="setProduct('ces')">CES</button>
+      <button class="ptog lean" id="togLean" onclick="setProduct('lean')">LEAN</button>
+      <button class="ptog"      id="togCes"  onclick="setProduct('ces')">CES</button>
     </div>
   </div>
   <div class="tb-right">
@@ -136,52 +169,108 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 </div>
 
 <script>
-let DATA = null;
-let PROD = 'lean';
+let DATA = null, PROD = 'lean';
 const charts = {};
 
-/* ── Formatters ─────────────────────────────────────────── */
+/* ── Formatters ─────────────────────────────────── */
 const brl  = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
-const brlK = n => n >= 1000 ? 'R$'+(n/1000).toFixed(0)+'k' : 'R$'+Math.round(n);
+const brlK = n => n>=1000?'R$'+(n/1000).toFixed(0)+'k':'R$'+Math.round(n);
 const fmtN = n => Math.round(n).toLocaleString('pt-BR');
 const fmtW = w => { const[,m,d]=w.split('-'); return `${d}/${m}`; };
 const fmtD = d => { const[,,day]=d.split('-'); return String(+day); };
-const fmtM = ym => {
-  if(!ym) return '—';
-  const[y,mo]=ym.split('-');
-  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y;
-};
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtM = ym => { if(!ym)return'—'; const[y,mo]=ym.split('-'); return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y; };
+const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-/* ── Chart utils ─────────────────────────────────────────── */
+/* ── Colors ─────────────────────────────────────── */
+const C = {
+  lean:    '#1d4ed8', lean2:'#3b82f6', leanBg:'#eff6ff',
+  ces:     '#0e7490', ces2: '#06b6d4', cesBg: '#ecfeff',
+  ganho:   '#166534', perda:'#991b1b',
+};
+function color(p){ return p==='lean'?C.lean:C.ces; }
+function color2(p){ return p==='lean'?C.lean2:C.ces2; }
+
+/* ── Chart.js setup ─────────────────────────────── */
+Chart.register(ChartDataLabels);
 Chart.defaults.font = {family:'DM Sans',size:10};
 Chart.defaults.color = '#8a8277';
 const GC = 'rgba(28,32,32,.06)';
 
-function dk(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function dk(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
 
-function mkBar(id,labels,values,color,opts={}){
+/* Delta plugin para gráficos semanais */
+const deltaPlugin = {
+  id:'delta',
+  afterDatasetsDraw(chart){
+    if(!chart.options.plugins?.delta?.show) return;
+    const {ctx} = chart;
+    const meta  = chart.getDatasetMeta(0);
+    const data  = chart.data.datasets[0].data;
+    for(let i=1;i<meta.data.length;i++){
+      const prev=data[i-1], curr=data[i];
+      if(!prev||!curr) continue;
+      const pct=((curr-prev)/prev*100);
+      const isPos=pct>=0;
+      const col=isPos?'#166534':'#991b1b';
+      const midX=(meta.data[i-1].x+meta.data[i].x)/2;
+      const topY=Math.min(meta.data[i-1].y,meta.data[i].y)-18;
+      ctx.save();
+      ctx.font='bold 9px DM Sans,sans-serif';
+      ctx.fillStyle=col;
+      ctx.textAlign='center';
+      ctx.fillText((isPos?'▲':'▼')+Math.abs(pct).toFixed(0)+'%',midX,topY);
+      ctx.restore();
+    }
+  }
+};
+Chart.register(deltaPlugin);
+
+/* Bar chart normal com rótulos */
+function mkBar(id,labels,values,col,opts={}){
   dk(id);
-  const ctx=document.getElementById(id);if(!ctx)return;
+  const ctx=document.getElementById(id); if(!ctx)return;
+  const isWeekly=opts.weekly||false;
   charts[id]=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[{data:values,backgroundColor:color+'30',borderColor:color,borderWidth:1.5,borderRadius:3}]},
+    data:{labels,datasets:[{data:values,backgroundColor:col+'28',borderColor:col,borderWidth:1.5,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.parsed.y)}}},
+      layout:{padding:{top:isWeekly?30:22}},
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
+          formatter:v=>fmtN(v),
+          color:col,
+          font:{family:'DM Sans',size:9,weight:'700'},
+          anchor:'end',align:'top',offset:2,
+        },
+        tooltip:{callbacks:{label:c=>' '+fmtN(c.parsed.y)}},
+        delta:{show:isWeekly},
+      },
       scales:{
         x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:opts.maxTicks||20},border:{color:'transparent'}},
         y:{grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true}
       }}});
 }
 
+/* Stacked bar com rótulo do total */
 function mkStackedBar(id,labels,datasets){
   dk(id);
-  const ctx=document.getElementById(id);if(!ctx)return;
+  const ctx=document.getElementById(id); if(!ctx)return;
+  const totals=labels.map((_,i)=>datasets.reduce((s,d)=>s+(d.data[i]||0),0));
   charts[id]=new Chart(ctx,{type:'bar',
     data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:22}},
       plugins:{
         legend:{display:true,position:'bottom',labels:{font:{size:9},padding:10,boxWidth:9}},
-        tooltip:{mode:'index',intersect:false}
+        datalabels:{
+          display:(ctx)=>ctx.datasetIndex===datasets.length-1&&totals[ctx.dataIndex]>0,
+          formatter:(_,ctx)=>fmtN(totals[ctx.dataIndex]),
+          color:'#1c2b3a',
+          font:{family:'DM Sans',size:9,weight:'700'},
+          anchor:'end',align:'top',offset:2,
+        },
+        tooltip:{mode:'index',intersect:false},
       },
       scales:{
         x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxTicksLimit:20},border:{color:'transparent'}},
@@ -189,116 +278,113 @@ function mkStackedBar(id,labels,datasets){
       }}});
 }
 
-/* ── Render ──────────────────────────────────────────────── */
+/* ── Origem temporal widget ─────────────────────── */
+function otHtml(data,color){
+  if(!data||!data.length) return '';
+  const max=Math.max(...data.map(d=>d.v),1);
+  return data.map(d=>`
+    <div class="ot-row">
+      <div class="ot-label">${esc(d.label)}</div>
+      <div class="ot-track"><div class="ot-fill" style="width:${Math.round(d.v/max*100)}%;background:${color}"></div></div>
+      <div class="ot-val">${fmtN(d.v)}</div>
+      <div class="ot-pct">${d.pct}%</div>
+    </div>`).join('');
+}
+
+/* ── Render principal ───────────────────────────── */
 function render(){
   if(!DATA)return;
-  const d     = DATA[PROD];
-  const color = PROD==='lean' ? '#b8873f' : '#2d7da8';
-  const label = PROD==='lean' ? 'Lean Governance' : 'CES';
-  const mes   = fmtM(DATA.mes);
-  const ts    = new Date(DATA.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const d   = DATA[PROD];
+  const col = color(PROD);
+  const col2= color2(PROD);
+  const lbl = PROD==='lean'?'Lean Governance':'CES';
+  const mes = fmtM(DATA.mes);
+  const ts  = new Date(DATA.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const badgeClass = PROD==='lean'?'badge-lean':'badge-ces';
+  const divClass   = PROD==='lean'?'div-lean':'div-ces';
 
-  document.getElementById('tbMeta').textContent = `${mes} · ${ts}`;
+  document.getElementById('tbMeta').textContent=`${mes} · ${ts}`;
+  document.getElementById('togLean').className=`ptog${PROD==='lean'?' lean':''}`;
+  document.getElementById('togCes').className =`ptog${PROD==='ces'?' ces':''}`;
 
-  const {criados,ganhos,perdidos} = d;
-  const dLabels = criados.porDia.map(x=>fmtD(x.d));
-  const wLabels = criados.porSemana.map(x=>fmtW(x.w));
+  const {criados,ganhos,perdidos}=d;
+  const dLabels=criados.porDia.map(x=>fmtD(x.d));
+  const wLabels=criados.porSemana.map(x=>fmtW(x.w));
 
-  /* ── produtos vendidos dos criados ── */
-  const temProdutosVendidos = criados.produtosVendidos && criados.produtosVendidos.length > 0;
-  const tabelaProdutos = temProdutosVendidos ? `
-    <div class="sec-lbl" style="margin-top:16px">Produtos vendidos · dos leads criados esse mês</div>
+  /* tabela produtos dos criados */
+  const tblProd = criados.produtosVendidos?.length ? `
+    <div class="sec-lbl2" style="font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:8px">
+      Produtos vendidos dos leads criados este mês
+      <span style="flex:1;height:1px;background:var(--border);display:block"></span>
+    </div>
     <div class="twrap">
-      <table>
-        <thead><tr><th>Produto</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
-        <tbody>
-          ${criados.produtosVendidos.map(p=>`
-            <tr>
-              <td class="td-name">${esc(p.nome)}</td>
-              <td>${fmtN(p.t)}</td>
-              <td>${brl(p.rev)}</td>
-              <td>${brl(p.ticket)}</td>
-            </tr>`).join('')}
-        </tbody>
-        <tfoot><tr>
-          <td>Total</td>
-          <td>${fmtN(criados.produtosVendidos.reduce((a,p)=>a+p.t,0))}</td>
-          <td>${brl(criados.produtosVendidos.reduce((a,p)=>a+p.rev,0))}</td>
-          <td>—</td>
-        </tr></tfoot>
+      <table><thead><tr><th>Produto</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
+      <tbody>${criados.produtosVendidos.map(p=>`<tr><td class="td-name">${esc(p.nome)}</td><td>${fmtN(p.t)}</td><td>${brl(p.rev)}</td><td>${brl(p.ticket)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total</td><td>${fmtN(criados.produtosVendidos.reduce((a,p)=>a+p.t,0))}</td><td>${brl(criados.produtosVendidos.reduce((a,p)=>a+p.rev,0))}</td><td>—</td></tr></tfoot>
       </table>
     </div>` : '';
 
-  /* ── origens (ganhos por produto) ── */
-  const temOrigens = ganhos.porProduto.origens && ganhos.porProduto.origens.length > 0;
-  const tabelaOrigens = temOrigens ? `
-    <div class="sec-lbl" style="margin-top:16px">Origem das vendas · campanha de onde veio o lead</div>
+  /* tabela origens (por produto) */
+  const tblOrigens = ganhos.porProduto.origens?.length ? `
+    <div class="sec-lbl2" style="font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:8px">
+      Campanha de origem das vendas
+      <span style="flex:1;height:1px;background:var(--border);display:block"></span>
+    </div>
     <div class="twrap">
-      <table>
-        <thead><tr><th>Campanha de Origem</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
-        <tbody>
-          ${ganhos.porProduto.origens.map(o=>`
-            <tr>
-              <td class="td-name">${esc(o.nome)}</td>
-              <td>${fmtN(o.t)}</td>
-              <td>${brl(o.rev)}</td>
-              <td>${brl(o.ticket)}</td>
-            </tr>`).join('')}
-        </tbody>
+      <table><thead><tr><th>Campanha</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
+      <tbody>${ganhos.porProduto.origens.map(o=>`<tr><td class="td-name">${esc(o.nome)}</td><td>${fmtN(o.t)}</td><td>${brl(o.rev)}</td><td>${brl(o.ticket)}</td></tr>`).join('')}</tbody>
       </table>
     </div>` : '';
 
   document.getElementById('content').innerHTML = `
+
+    <!-- HEADER -->
     <div class="ph-row">
       <div>
-        <div class="ph-eye">Board Academy · Inteligência Comercial</div>
-        <div class="ph-ttl">${label}</div>
-        <div class="ph-sub">${mes} · Leads e perdas por campanha · Ganhos por produto e campanha</div>
+        <div class="ph-badge ${badgeClass}">${lbl}</div>
+        <div class="ph-ttl">${lbl} · ${mes}</div>
+        <div class="ph-sub">Leads e perdas por campanha · Ganhos por produto e campanha de origem</div>
       </div>
     </div>
 
-    <!-- ════ CRIADOS ════════════════════════════════════════ -->
-    <div class="sec-lbl">Leads Criados · campanha de origem · mês atual</div>
+    <!-- ════ LEADS CRIADOS ══════════════════════════════════ -->
+    <div class="sec-block">
+      <div class="sec-eyebrow">Eixo temporal · Data de Criação</div>
+      <div class="sec-title">Leads Criados <span class="sec-date-tag tag-criado">Mês atual · ${mes}</span></div>
+      <div class="sec-divider ${divClass}"></div>
+    </div>
 
-    <div class="charts-1">
+    <div class="charts-2">
       <div class="ccard">
         <div class="ccard-ttl">Volume dia a dia · por status</div>
-        <div class="cwrap md"><canvas id="ch-criados-dia"></canvas></div>
+        <div class="cwrap md"><canvas id="ch-cri-dia"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-ttl">Volume por semana · últimas 8 semanas completas</div>
+        <div class="cwrap md"><canvas id="ch-cri-sem"></canvas></div>
       </div>
     </div>
 
     <div class="kpi-row kpi5">
-      <div class="kpi">
-        <div class="lbl">Total criado no mês</div>
-        <div class="val">${fmtN(criados.total)}</div>
-        <div class="sub">${criados.mediaDia} por dia</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">Em Aberto</div>
-        <div class="val" style="color:var(--navy)">${fmtN(criados.status.a)}</div>
-        <div class="sub">${criados.total>0?((criados.status.a/criados.total)*100).toFixed(0):'0'}% do total</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">Ganhos dos criados</div>
-        <div class="val" style="color:var(--sage)">${fmtN(criados.status.g)}</div>
-        <div class="sub">leads criados esse mês</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">Perdidos dos criados</div>
-        <div class="val" style="color:var(--rust)">${fmtN(criados.status.p)}</div>
-        <div class="sub">leads criados esse mês</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">Taxa de Conversão</div>
-        <div class="val">${criados.taxaConv}%</div>
-        <div class="sub">ganhos ÷ criados</div>
-      </div>
+      <div class="kpi"><div class="kpi-accent" style="background:${col}"></div>
+        <div class="lbl">Total criado no mês</div><div class="val">${fmtN(criados.total)}</div><div class="sub">${criados.mediaDia} por dia</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--navy)"></div>
+        <div class="lbl">Em Aberto</div><div class="val" style="color:var(--navy)">${fmtN(criados.status.a)}</div><div class="sub">${criados.total>0?((criados.status.a/criados.total)*100).toFixed(0):'0'}% do total</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--sage)"></div>
+        <div class="lbl">Ganhos dos criados</div><div class="val" style="color:var(--sage)">${fmtN(criados.status.g)}</div><div class="sub">leads criados este mês</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--rust)"></div>
+        <div class="lbl">Perdidos dos criados</div><div class="val" style="color:var(--rust)">${fmtN(criados.status.p)}</div><div class="sub">leads criados este mês</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div>
+        <div class="lbl">Taxa de Conversão</div><div class="val" style="color:${col}">${criados.taxaConv}%</div><div class="sub">ganhos ÷ criados</div></div>
     </div>
+    ${tblProd}
 
-    ${tabelaProdutos}
-
-    <!-- ════ GANHOS ═════════════════════════════════════════ -->
-    <div class="sec-ttl">Negócios Ganhos</div>
+    <!-- ════ NEGÓCIOS GANHOS ═════════════════════════════════ -->
+    <div class="sec-block">
+      <div class="sec-eyebrow">Eixo temporal · Data de Ganho</div>
+      <div class="sec-title">Negócios Ganhos <span class="sec-date-tag tag-ganho">Data de Ganho · ${mes}</span></div>
+      <div class="sec-divider div-ganho"></div>
+    </div>
 
     <div class="gtog-row">
       <button class="gtog active" id="gtog-prod" onclick="switchGanhos('prod')">Por Produto vendido</button>
@@ -308,58 +394,58 @@ function render(){
     <!-- Visão produto -->
     <div id="view-prod">
       <div class="kpi-row kpi3">
-        <div class="kpi"><div class="lbl">Vendas (produto)</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div></div>
-        <div class="kpi"><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porProduto.receita)}</div><div class="sub">${brl(ganhos.porProduto.receita)}</div></div>
-        <div class="kpi"><div class="lbl">Ticket Médio</div><div class="val">${ganhos.porProduto.ticket>0?brlK(ganhos.porProduto.ticket):'—'}</div><div class="sub">por fechamento</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Vendas (produto)</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porProduto.receita)}</div><div class="sub">${brl(ganhos.porProduto.receita)}</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div><div class="lbl">Ticket Médio</div><div class="val" style="color:${col}">${ganhos.porProduto.ticket>0?brlK(ganhos.porProduto.ticket):'—'}</div><div class="sub">por fechamento</div></div>
       </div>
       <div class="charts-2">
-        <div class="ccard">
-          <div class="ccard-ttl">Vendas por dia · produto vendido</div>
-          <div class="cwrap"><canvas id="ch-gp-dia"></canvas></div>
-        </div>
-        <div class="ccard">
-          <div class="ccard-ttl">Vendas por semana · produto vendido</div>
-          <div class="cwrap"><canvas id="ch-gp-sem"></canvas></div>
-        </div>
+        <div class="ccard"><div class="ccard-ttl">Vendas por dia · produto vendido</div><div class="cwrap"><canvas id="ch-gp-dia"></canvas></div></div>
+        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas completas</div><div class="cwrap"><canvas id="ch-gp-sem"></canvas></div></div>
       </div>
-      ${tabelaOrigens}
+      ${tblOrigens}
+      <div class="ot-card">
+        <div class="ot-title">Quando foi criado o lead que virou venda · por produto</div>
+        <div class="ot-rows">${otHtml(ganhos.porProduto.origemTemporal,col)}</div>
+      </div>
     </div>
 
     <!-- Visão campanha -->
     <div id="view-camp" style="display:none">
       <div class="kpi-row kpi3">
-        <div class="kpi"><div class="lbl">Vendas (campanha)</div><div class="val">${fmtN(ganhos.porCampanha.total)}</div><div class="sub">negócios ganhos</div></div>
-        <div class="kpi"><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porCampanha.receita)}</div><div class="sub">${brl(ganhos.porCampanha.receita)}</div></div>
-        <div class="kpi"><div class="lbl">Ticket Médio</div><div class="val">${ganhos.porCampanha.ticket>0?brlK(ganhos.porCampanha.ticket):'—'}</div><div class="sub">por fechamento</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Vendas (campanha)</div><div class="val">${fmtN(ganhos.porCampanha.total)}</div><div class="sub">negócios ganhos</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porCampanha.receita)}</div><div class="sub">${brl(ganhos.porCampanha.receita)}</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div><div class="lbl">Ticket Médio</div><div class="val" style="color:${col}">${ganhos.porCampanha.ticket>0?brlK(ganhos.porCampanha.ticket):'—'}</div><div class="sub">por fechamento</div></div>
       </div>
       <div class="charts-2">
-        <div class="ccard">
-          <div class="ccard-ttl">Vendas por dia · campanha de origem</div>
-          <div class="cwrap"><canvas id="ch-gc-dia"></canvas></div>
-        </div>
-        <div class="ccard">
-          <div class="ccard-ttl">Vendas por semana · campanha de origem</div>
-          <div class="cwrap"><canvas id="ch-gc-sem"></canvas></div>
-        </div>
+        <div class="ccard"><div class="ccard-ttl">Vendas por dia · campanha de origem</div><div class="cwrap"><canvas id="ch-gc-dia"></canvas></div></div>
+        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas completas</div><div class="cwrap"><canvas id="ch-gc-sem"></canvas></div></div>
+      </div>
+      <div class="ot-card">
+        <div class="ot-title">Quando foi criado o lead que virou venda · por campanha</div>
+        <div class="ot-rows">${otHtml(ganhos.porCampanha.origemTemporal,col)}</div>
       </div>
     </div>
 
-    <!-- ════ PERDIDOS ════════════════════════════════════════ -->
-    <div class="sec-ttl">Negócios Perdidos · campanha de origem</div>
+    <!-- ════ NEGÓCIOS PERDIDOS ═══════════════════════════════ -->
+    <div class="sec-block">
+      <div class="sec-eyebrow">Eixo temporal · Data de Perda</div>
+      <div class="sec-title">Negócios Perdidos <span class="sec-date-tag tag-perda">Data de Perda · ${mes}</span></div>
+      <div class="sec-divider div-perda"></div>
+    </div>
 
     <div class="kpi-row kpi1">
-      <div class="kpi"><div class="lbl">Total Perdidos no Mês</div><div class="val">${fmtN(perdidos.total)}</div><div class="sub">${perdidos.mediaDia} por dia</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--rust)"></div>
+        <div class="lbl">Total Perdidos no Mês</div><div class="val" style="color:var(--rust)">${fmtN(perdidos.total)}</div><div class="sub">${perdidos.mediaDia} por dia</div></div>
     </div>
 
     <div class="charts-2">
-      <div class="ccard">
-        <div class="ccard-ttl">Perdidos por dia · mês atual</div>
-        <div class="cwrap"><canvas id="ch-perd-dia"></canvas></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-ttl">Perdidos por semana · últimas 8 semanas</div>
-        <div class="cwrap"><canvas id="ch-perd-sem"></canvas></div>
-      </div>
+      <div class="ccard"><div class="ccard-ttl">Perdidos por dia · mês atual</div><div class="cwrap"><canvas id="ch-perd-dia"></canvas></div></div>
+      <div class="ccard"><div class="ccard-ttl">Perdidos por semana · últimas 8 semanas completas</div><div class="cwrap"><canvas id="ch-perd-sem"></canvas></div></div>
+    </div>
+
+    <div class="ot-card">
+      <div class="ot-title">Quando foi criado o lead que foi perdido</div>
+      <div class="ot-rows">${otHtml(perdidos.origemTemporal,'#c0533a')}</div>
     </div>
 
     <div class="ccard" style="margin-bottom:16px">
@@ -373,79 +459,64 @@ function render(){
     </div>
   `;
 
-  /* ── Motivos ── */
-  const motEl = document.getElementById('motivos-list');
-  motEl.innerHTML = perdidos.topMotivos.length
-    ? perdidos.topMotivos.map(m=>`
+  /* Motivos */
+  const motEl=document.getElementById('motivos-list');
+  motEl.innerHTML=perdidos.topMotivos.length
+    ?perdidos.topMotivos.map(m=>`
         <div class="motivo-row">
           <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
-          <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:${color}"></div></div>
+          <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
           <div class="motivo-pct">${m.pct}%</div>
           <div class="motivo-count">${m.c}</div>
         </div>`).join('')
-    : '<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados no período.</div>';
+    :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados no período.</div>';
 
-  /* ── Charts ── */
-  // Criados empilhado por dia
-  mkStackedBar('ch-criados-dia', dLabels, [
-    { label:'Aberto',  data: criados.porDia.map(x=>x.a), backgroundColor:'#1c2b3a99', borderWidth:0, borderRadius:2 },
-    { label:'Ganho',   data: criados.porDia.map(x=>x.g), backgroundColor:'#4a7c6a99', borderWidth:0, borderRadius:2 },
-    { label:'Perdido', data: criados.porDia.map(x=>x.p), backgroundColor:'#c0533a99', borderWidth:0, borderRadius:2 },
+  /* Charts */
+  mkStackedBar('ch-cri-dia',dLabels,[
+    {label:'Aberto',  data:criados.porDia.map(x=>x.a),backgroundColor:'#1c2b3a55',borderWidth:0,borderRadius:2},
+    {label:'Ganho',   data:criados.porDia.map(x=>x.g),backgroundColor:'#4a7c6a55',borderWidth:0,borderRadius:2},
+    {label:'Perdido', data:criados.porDia.map(x=>x.p),backgroundColor:'#c0533a55',borderWidth:0,borderRadius:2},
   ]);
-
-  // Ganhos por produto
-  mkBar('ch-gp-dia', dLabels, ganhos.porProduto.porDia.map(x=>x.v), color, {maxTicks:20});
-  mkBar('ch-gp-sem', wLabels, ganhos.porProduto.porSemana.map(x=>x.v), color);
-
-  // Ganhos por campanha
-  mkBar('ch-gc-dia', dLabels, ganhos.porCampanha.porDia.map(x=>x.v), color, {maxTicks:20});
-  mkBar('ch-gc-sem', wLabels, ganhos.porCampanha.porSemana.map(x=>x.v), color);
-
-  // Perdidos
-  mkBar('ch-perd-dia', dLabels, perdidos.porDia.map(x=>x.v), '#c0533a', {maxTicks:20});
-  mkBar('ch-perd-sem', wLabels, perdidos.porSemana.map(x=>x.v), '#c0533a');
+  mkBar('ch-cri-sem', wLabels, criados.porSemana.map(x=>x.v), col, {weekly:true});
+  mkBar('ch-gp-dia',  dLabels, ganhos.porProduto.porDia.map(x=>x.v),  col, {maxTicks:20});
+  mkBar('ch-gp-sem',  wLabels, ganhos.porProduto.porSemana.map(x=>x.v), col, {weekly:true});
+  mkBar('ch-gc-dia',  dLabels, ganhos.porCampanha.porDia.map(x=>x.v), col, {maxTicks:20});
+  mkBar('ch-gc-sem',  wLabels, ganhos.porCampanha.porSemana.map(x=>x.v), col, {weekly:true});
+  mkBar('ch-perd-dia',dLabels, perdidos.porDia.map(x=>x.v), '#c0533a', {maxTicks:20});
+  mkBar('ch-perd-sem',wLabels, perdidos.porSemana.map(x=>x.v), '#c0533a', {weekly:true});
 }
 
-/* ── Toggle produto ──────────────────────────────────────── */
 function setProduct(p){
-  PROD=p;
-  document.getElementById('togLean').classList.toggle('active',p==='lean');
-  document.getElementById('togCes').classList.toggle('active',p==='ces');
-  if(DATA) render();
+  PROD=p; if(DATA)render();
 }
 
-/* ── Toggle ganhos ───────────────────────────────────────── */
 function switchGanhos(view){
   const isProd=view==='prod';
   document.getElementById('view-prod').style.display=isProd?'block':'none';
   document.getElementById('view-camp').style.display=isProd?'none':'block';
-  document.getElementById('gtog-prod').classList.toggle('active', isProd);
+  document.getElementById('gtog-prod').classList.toggle('active',isProd);
   document.getElementById('gtog-camp').classList.toggle('active',!isProd);
 }
 
-/* ── Load ────────────────────────────────────────────────── */
 async function loadData(){
   const err=document.getElementById('errBanner');
   err.style.display='none';
   try{
     const r=await fetch('/api/report');
     const j=await r.json();
-    if(!j.ok) throw new Error(j.error);
-    DATA=j;
-    render();
+    if(!j.ok)throw new Error(j.error);
+    DATA=j; render();
   }catch(e){
     err.textContent=`Erro ao carregar: ${e.message}`;
     err.style.display='block';
-    document.getElementById('content').innerHTML=
-      '<div class="state-wrap"><span>Não foi possível carregar os dados.</span></div>';
+    document.getElementById('content').innerHTML='<div class="state-wrap"><span>Não foi possível carregar os dados.</span></div>';
   }
 }
 
 async function doRefresh(){
   const btn=document.getElementById('btnRefresh');
   btn.disabled=true;btn.textContent='↺ Atualizando…';
-  document.getElementById('content').innerHTML=
-    '<div class="state-wrap"><div class="spinner"></div><span>Atualizando…</span></div>';
+  document.getElementById('content').innerHTML='<div class="state-wrap"><div class="spinner"></div><span>Atualizando…</span></div>';
   await loadData();
   btn.disabled=false;btn.textContent='↺ Atualizar';
 }
@@ -453,96 +524,63 @@ async function doRefresh(){
 loadData();
 </script>
 
-<!-- ════════════════════════════════════════════════════════
-     FERRAMENTAS DE APRESENTAÇÃO
-     Atalhos: L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom
-     ════════════════════════════════════════════════════════ -->
-
-<!-- Overlay canvas (caneta + setas) -->
+<!-- ════ FERRAMENTAS DE APRESENTAÇÃO ═══════════════════════
+     L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom
+═══════════════════════════════════════════════════════════ -->
 <canvas id="pCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;"></canvas>
-
-<!-- SVG overlay (laser) -->
 <svg id="pSvg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8001;pointer-events:none;overflow:visible;"></svg>
-
-<!-- Spotlight overlay -->
 <div id="pSpot" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:7999;pointer-events:none;display:none;"></div>
-
-<!-- Zoom overlay -->
 <div id="pZoomBox" style="position:fixed;border:2px dashed #f5c518;background:rgba(245,197,24,.08);z-index:8010;pointer-events:none;display:none;"></div>
 <div id="pZoomView" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9000;background:#f2ede6;display:none;overflow:hidden;">
   <div id="pZoomContent" style="position:absolute;transform-origin:top left;"></div>
   <button onclick="exitZoom()" style="position:fixed;top:18px;right:24px;background:#1c2b3a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;z-index:9999;">✕ Sair do Zoom (Esc)</button>
 </div>
 
-<!-- Toolbar -->
-<div id="pToolbar" style="
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:rgba(28,43,58,.95);backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.12);border-radius:40px;
-  display:flex;align-items:center;gap:4px;padding:6px 10px;
-  z-index:9500;box-shadow:0 8px 32px rgba(0,0,0,.4);
-  font-family:'DM Sans',sans-serif;
-">
-  <div style="font-size:.6rem;color:rgba(255,255,255,.3);letter-spacing:.08em;text-transform:uppercase;padding:0 8px 0 4px;border-right:1px solid rgba(255,255,255,.1);margin-right:4px;">Apresentação</div>
-  <button class="ptool" id="pt-laser"   onclick="setTool('laser')"   title="Laser (L)">🔴 Laser</button>
-  <button class="ptool" id="pt-arrow"   onclick="setTool('arrow')"   title="Seta (A)">↗ Seta</button>
-  <button class="ptool" id="pt-pen"     onclick="setTool('pen')"     title="Caneta (C)">✏️ Caneta</button>
-  <button class="ptool" id="pt-spot"    onclick="setTool('spot')"    title="Spotlight (S)">🔦 Foco</button>
-  <button class="ptool" id="pt-zoom"    onclick="setTool('zoom')"    title="Zoom (Z)">🔍 Zoom</button>
+<div id="pToolbar" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(28,43,58,.95);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:40px;display:flex;align-items:center;gap:4px;padding:6px 10px;z-index:9500;box-shadow:0 8px 32px rgba(0,0,0,.4);font-family:'DM Sans',sans-serif;">
+  <div style="font-size:.58rem;color:rgba(255,255,255,.3);letter-spacing:.08em;text-transform:uppercase;padding:0 8px 0 4px;border-right:1px solid rgba(255,255,255,.1);margin-right:4px;">Apresentação</div>
+  <button class="ptool" id="pt-laser" onclick="setTool('laser')" title="Laser (L)">🔴 Laser</button>
+  <button class="ptool" id="pt-arrow" onclick="setTool('arrow')" title="Seta (A)">↗ Seta</button>
+  <button class="ptool" id="pt-pen"   onclick="setTool('pen')"   title="Caneta (C)">✏️ Caneta</button>
+  <button class="ptool" id="pt-spot"  onclick="setTool('spot')"  title="Spotlight (S)">🔦 Foco</button>
+  <button class="ptool" id="pt-zoom"  onclick="setTool('zoom')"  title="Zoom (Z)">🔍 Zoom</button>
   <div style="width:1px;height:20px;background:rgba(255,255,255,.1);margin:0 4px;"></div>
-  <button class="ptool" id="pt-clear"   onclick="clearCanvas()"      title="Limpar (Del)" style="color:rgba(255,100,100,.8)">✕ Limpar</button>
+  <button class="ptool" onclick="clearCanvas()" title="Limpar (Del)" style="color:rgba(255,100,100,.8)">✕ Limpar</button>
 </div>
 
 <style>
-.ptool{
-  background:none;border:none;color:rgba(255,255,255,.65);
-  font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;
-  padding:6px 13px;border-radius:24px;cursor:pointer;
-  transition:all .15s;white-space:nowrap;letter-spacing:.02em;
-}
+.ptool{background:none;border:none;color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;padding:6px 13px;border-radius:24px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .ptool:hover{background:rgba(255,255,255,.1);color:#fff}
 .ptool.on{background:rgba(245,197,24,.25);color:#f5c518;border:1px solid rgba(245,197,24,.4)}
 </style>
 
 <script>
-/* ══ PRESENTATION ENGINE ══════════════════════════════════ */
-let pTool   = null;   // laser | arrow | pen | spot | zoom
-let pDraw   = false;  // mouse pressed
-let pPoints = [];     // pen stroke points
-let pArrow  = null;   // {x1,y1} start of arrow
+/* ══ ENGINE DE APRESENTAÇÃO ════════════════════════ */
+let pTool=null,pDraw=false,pPoints=[],pArrow=null;
+const pCvs=document.getElementById('pCanvas');
+const pCtx=pCvs.getContext('2d');
+const pSvg=document.getElementById('pSvg');
+const pSpot=document.getElementById('pSpot');
 
-const pCvs  = document.getElementById('pCanvas');
-const pCtx  = pCvs.getContext('2d');
-const pSvg  = document.getElementById('pSvg');
-const pSpot = document.getElementById('pSpot');
+/* Trail do laser */
+let laserTrail=[],laserEl=null,laserTrailEls=[];
 
-/* resize canvas */
-function resizeCvs(){
-  pCvs.width  = window.innerWidth;
-  pCvs.height = window.innerHeight;
-}
-resizeCvs();
-window.addEventListener('resize', resizeCvs);
+function resizeCvs(){ pCvs.width=window.innerWidth; pCvs.height=window.innerHeight; }
+resizeCvs(); window.addEventListener('resize',resizeCvs);
 
-/* ── Tool selector ──────────────────────────────────────── */
 function setTool(t){
-  if(pTool === t){ pTool=null; }
-  else            { pTool=t;   }
+  pTool=pTool===t?null:t;
   ['laser','arrow','pen','spot','zoom'].forEach(id=>{
-    const btn = document.getElementById('pt-'+id);
-    if(btn) btn.classList.toggle('on', pTool===id);
+    const b=document.getElementById('pt-'+id); if(b) b.classList.toggle('on',pTool===id);
   });
-  pCvs.style.pointerEvents  = ['arrow','pen','zoom'].includes(pTool) ? 'auto' : 'none';
-  pSvg.style.pointerEvents  = pTool==='laser' ? 'none' : 'none';
-  document.body.style.cursor = pTool ? 'crosshair' : '';
-  if(pTool !== 'spot') { pSpot.style.display='none'; }
-  if(pTool !== 'laser'){ clearLaser(); }
-  if(pTool !== 'zoom') { document.getElementById('pZoomBox').style.display='none'; }
-  if(pTool === 'spot') pSpot.style.display='block';
+  pCvs.style.pointerEvents=['arrow','pen','zoom'].includes(pTool)?'auto':'none';
+  document.body.style.cursor=pTool?'crosshair':'';
+  if(pTool!=='spot'){pSpot.style.display='none';}
+  if(pTool!=='laser'){clearLaser();}
+  if(pTool!=='zoom'){document.getElementById('pZoomBox').style.display='none';}
+  if(pTool==='spot') pSpot.style.display='block';
 }
 
-/* ── Keyboard shortcuts ─────────────────────────────────── */
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
   if(e.key==='l'||e.key==='L') setTool('laser');
   if(e.key==='a'||e.key==='A') setTool('arrow');
@@ -550,165 +588,123 @@ document.addEventListener('keydown', e => {
   if(e.key==='s'||e.key==='S') setTool('spot');
   if(e.key==='z'||e.key==='Z') setTool('zoom');
   if(e.key==='Delete'||e.key==='Backspace') clearCanvas();
-  if(e.key==='Escape') { exitZoom(); setTool(null); }
+  if(e.key==='Escape'){exitZoom();setTool(null);}
 });
 
-/* ── LASER ──────────────────────────────────────────────── */
-let laserEl = null;
-function clearLaser(){ if(laserEl){ laserEl.remove(); laserEl=null; } }
+/* ── LASER com rastro ─────────────────────── */
+function clearLaser(){
+  if(laserEl){laserEl.remove();laserEl=null;}
+  laserTrailEls.forEach(e=>e.remove());
+  laserTrailEls=[];laserTrail=[];
+}
 
-document.addEventListener('mousemove', e => {
+document.addEventListener('mousemove',e=>{
   if(pTool==='laser'){
+    laserTrail.push({x:e.clientX,y:e.clientY,t:Date.now()});
+    if(laserTrail.length>20) laserTrail.shift();
+
+    // Remove trail antigo
+    laserTrailEls.forEach(el=>el.remove());
+    laserTrailEls=[];
+
+    // Desenha rastro
+    const now=Date.now();
+    laserTrail.forEach((pt,i)=>{
+      const age=(now-pt.t)/400;
+      if(age>1) return;
+      const r=Math.max(1,4*(1-age));
+      const op=Math.max(0,0.5*(1-age));
+      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);
+      c.setAttribute('r',r);c.setAttribute('fill',`rgba(255,30,30,${op})`);
+      pSvg.appendChild(c);
+      laserTrailEls.push(c);
+    });
+
+    // Ponto principal — menor, raio 5
     if(!laserEl){
-      laserEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      laserEl.setAttribute('r','10');
-      laserEl.setAttribute('fill','rgba(255,30,30,.85)');
-      laserEl.setAttribute('filter','url(#laserBlur)');
-      // Add glow filter once
+      laserEl=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      laserEl.setAttribute('r','5');
+      laserEl.setAttribute('fill','rgba(255,30,30,.95)');
       if(!document.getElementById('laserDefs')){
-        const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+        const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
         defs.id='laserDefs';
-        defs.innerHTML=`
-          <filter id="laserBlur" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="4" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>`;
+        defs.innerHTML=`<filter id="laserBlur" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>`;
         pSvg.prepend(defs);
       }
+      laserEl.setAttribute('filter','url(#laserBlur)');
       pSvg.appendChild(laserEl);
     }
-    laserEl.setAttribute('cx', e.clientX);
-    laserEl.setAttribute('cy', e.clientY);
+    laserEl.setAttribute('cx',e.clientX);laserEl.setAttribute('cy',e.clientY);
   }
-
   if(pTool==='spot'){
-    pSpot.style.background=`radial-gradient(circle 200px at ${e.clientX}px ${e.clientY}px, transparent 0%, rgba(0,0,0,.72) 100%)`;
+    pSpot.style.background=`radial-gradient(circle 200px at ${e.clientX}px ${e.clientY}px,transparent 0%,rgba(0,0,0,.75) 100%)`;
   }
 });
 
-/* ── ARROW ──────────────────────────────────────────────── */
-pCvs.addEventListener('mousedown', e => {
-  if(!pTool) return;
-  pDraw=true;
-  if(pTool==='arrow')  pArrow={x1:e.clientX,y1:e.clientY};
-  if(pTool==='pen')    { pPoints=[{x:e.clientX,y:e.clientY}]; }
-  if(pTool==='zoom')   zoomStart(e);
+/* ── SETA, CANETA ────────────────────────── */
+pCvs.addEventListener('mousedown',e=>{
+  if(!pTool)return; pDraw=true;
+  if(pTool==='arrow') pArrow={x1:e.clientX,y1:e.clientY};
+  if(pTool==='pen')   pPoints=[{x:e.clientX,y:e.clientY}];
+  if(pTool==='zoom')  zoomStart(e);
 });
-
-pCvs.addEventListener('mousemove', e => {
-  if(!pDraw) return;
-  if(pTool==='pen'){
-    pPoints.push({x:e.clientX,y:e.clientY});
-    drawStroke(pPoints, '#e03030', 2.5);
-  }
+pCvs.addEventListener('mousemove',e=>{
+  if(!pDraw)return;
+  if(pTool==='pen'){pPoints.push({x:e.clientX,y:e.clientY});drawStroke(pPoints);}
   if(pTool==='zoom') zoomDrag(e);
 });
-
-pCvs.addEventListener('mouseup', e => {
-  if(!pDraw) return;
-  pDraw=false;
-  if(pTool==='arrow' && pArrow){
-    const ax1=pArrow.x1, ay1=pArrow.y1, ax2=e.clientX, ay2=e.clientY;
-    drawArrowPerm(ax1,ay1,ax2,ay2);
-    pArrow=null;
-  }
+pCvs.addEventListener('mouseup',e=>{
+  if(!pDraw)return; pDraw=false;
+  if(pTool==='arrow'&&pArrow){drawArrow(pArrow.x1,pArrow.y1,e.clientX,e.clientY);pArrow=null;}
   if(pTool==='pen') pPoints=[];
   if(pTool==='zoom') zoomEnd(e);
 });
 
-/* ── PEN ────────────────────────────────────────────────── */
-function drawStroke(pts, color, width){
-  if(pts.length<2) return;
-  pCtx.strokeStyle=color;
-  pCtx.lineWidth=width;
-  pCtx.lineCap='round';
-  pCtx.lineJoin='round';
-  pCtx.beginPath();
-  pCtx.moveTo(pts[pts.length-2].x, pts[pts.length-2].y);
-  pCtx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
-  pCtx.stroke();
+function drawStroke(pts){
+  if(pts.length<2)return;
+  pCtx.strokeStyle='#e03030';pCtx.lineWidth=2.5;pCtx.lineCap='round';pCtx.lineJoin='round';
+  pCtx.beginPath();pCtx.moveTo(pts[pts.length-2].x,pts[pts.length-2].y);pCtx.lineTo(pts[pts.length-1].x,pts[pts.length-1].y);pCtx.stroke();
 }
 
-/* ── ARROW permanente com fade ──────────────────────────── */
-function drawArrowPerm(x1,y1,x2,y2){
-  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-  // arrowhead marker
-  const mid = `arrow-${Date.now()}`;
-  g.innerHTML=`
-    <defs>
-      <marker id="${mid}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L8,3 z" fill="#f5c518"/>
-      </marker>
-    </defs>
-    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-      stroke="#f5c518" stroke-width="3" stroke-linecap="round"
-      marker-end="url(#${mid})" opacity="1"
-      style="transition:opacity 1s ease"/>`;
+function drawArrow(x1,y1,x2,y2){
+  const id=`arr${Date.now()}`;
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.innerHTML=`<defs><marker id="${id}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f5c518"/></marker></defs>
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f5c518" stroke-width="3" stroke-linecap="round" marker-end="url(#${id})" opacity="1" style="transition:opacity 1s ease"/>`;
   pSvg.appendChild(g);
-  // fade depois de 2s, remove depois de 3s
-  setTimeout(()=>{ const ln=g.querySelector('line'); if(ln) ln.style.opacity='0'; }, 2000);
-  setTimeout(()=>{ g.remove(); }, 3100);
+  setTimeout(()=>{const l=g.querySelector('line');if(l)l.style.opacity='0';},2000);
+  setTimeout(()=>g.remove(),3100);
 }
 
-/* ── CLEAR ──────────────────────────────────────────────── */
 function clearCanvas(){
   pCtx.clearRect(0,0,pCvs.width,pCvs.height);
-  // remove setas que sobraram
   [...pSvg.querySelectorAll('g')].forEach(g=>g.remove());
 }
 
-/* ── SPOTLIGHT ──────────────────────────────────────────── */
-// handled in mousemove above
-
-/* ── ZOOM ───────────────────────────────────────────────── */
+/* ── ZOOM ──────────────────────────────── */
 let zRect={x:0,y:0,w:0,h:0};
-const zBox = document.getElementById('pZoomBox');
-
-function zoomStart(e){
-  zRect={x:e.clientX,y:e.clientY,w:0,h:0};
-  zBox.style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0;display:block;`;
-}
-function zoomDrag(e){
-  const w=e.clientX-zRect.x, h=e.clientY-zRect.y;
-  zRect.w=w; zRect.h=h;
-  zBox.style.left   = (w<0?e.clientX:zRect.x)+'px';
-  zBox.style.top    = (h<0?e.clientY:zRect.y)+'px';
-  zBox.style.width  = Math.abs(w)+'px';
-  zBox.style.height = Math.abs(h)+'px';
-}
+const zBox=document.getElementById('pZoomBox');
+function zoomStart(e){zRect={x:e.clientX,y:e.clientY,w:0,h:0};zBox.style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0;display:block;`;}
+function zoomDrag(e){const w=e.clientX-zRect.x,h=e.clientY-zRect.y;zRect.w=w;zRect.h=h;zBox.style.left=(w<0?e.clientX:zRect.x)+'px';zBox.style.top=(h<0?e.clientY:zRect.y)+'px';zBox.style.width=Math.abs(w)+'px';zBox.style.height=Math.abs(h)+'px';}
 function zoomEnd(e){
   zBox.style.display='none';
-  const rx = Math.min(zRect.x, e.clientX);
-  const ry = Math.min(zRect.y, e.clientY);
-  const rw = Math.abs(zRect.w);
-  const rh = Math.abs(zRect.h);
-  if(rw < 30 || rh < 30) return;
-
-  const scaleX = window.innerWidth  / rw;
-  const scaleY = window.innerHeight / rh;
-  const scale  = Math.min(scaleX, scaleY);
-
-  const zv  = document.getElementById('pZoomView');
-  const zc  = document.getElementById('pZoomContent');
-
-  // Clona o body sem o toolbar e overlays
-  const clone = document.body.cloneNode(true);
-  ['pToolbar','pCanvas','pSvg','pSpot','pZoomBox','pZoomView'].forEach(id=>{
-    const el=clone.querySelector('#'+id); if(el) el.remove();
-  });
-
-  zc.innerHTML='';
-  zc.appendChild(clone);
-  zc.style.width  = window.innerWidth  + 'px';
-  zc.style.height = window.innerHeight + 'px';
-  zc.style.transform = `scale(${scale}) translate(${-rx}px, ${-ry}px)`;
-
-  zv.style.display='block';
-  setTool(null);
+  const rx=Math.min(zRect.x,e.clientX),ry=Math.min(zRect.y,e.clientY);
+  const rw=Math.abs(zRect.w),rh=Math.abs(zRect.h);
+  if(rw<30||rh<30)return;
+  const scale=Math.min(window.innerWidth/rw,window.innerHeight/rh);
+  const zv=document.getElementById('pZoomView'),zc=document.getElementById('pZoomContent');
+  const clone=document.body.cloneNode(true);
+  ['pToolbar','pCanvas','pSvg','pSpot','pZoomBox','pZoomView'].forEach(id=>{const el=clone.querySelector('#'+id);if(el)el.remove();});
+  zc.innerHTML='';zc.appendChild(clone);
+  zc.style.width=window.innerWidth+'px';zc.style.height=window.innerHeight+'px';
+  zc.style.transform=`scale(${scale}) translate(${-rx}px,${-ry}px)`;
+  zv.style.display='block';setTool(null);
 }
-function exitZoom(){
-  document.getElementById('pZoomView').style.display='none';
-}
+function exitZoom(){document.getElementById('pZoomView').style.display='none';}
 </script>
 </body>
 </html>
