@@ -363,16 +363,30 @@ function mkScoreLine(id,items,col,snapItems){
 
   const bandPlugin={
     id:'scoreBand',
-    beforeDatasetsDraw(chart){
+    beforeDraw(chart){
       const{ctx:c,chartArea,scales}=chart;
       if(!chartArea||!scales?.x)return;
-      const step=(scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0));
-      const x0=scales.x.getPixelForValue(4)-step/2;
-      const x1=scales.x.getPixelForValue(6)+step/2;
-      c.save();
-      c.fillStyle='rgba(184,135,63,.16)';
-      c.fillRect(x0,chartArea.top,x1-x0,chartArea.bottom-chartArea.top);
-      c.restore();
+      try{
+        // ICP = De 6 a 6,9 (idx 4) até De 8 a 8,9 (idx 6)
+        const step=scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0);
+        const x0=scales.x.getPixelForValue(4)-step/2;
+        const x1=scales.x.getPixelForValue(6)+step/2;
+        c.save();
+        c.fillStyle='rgba(184,135,63,.18)';
+        c.fillRect(x0,chartArea.top,x1-x0,chartArea.bottom-chartArea.top);
+        // Linha vertical e label ICP
+        c.strokeStyle='rgba(184,135,63,.45)';
+        c.lineWidth=1;
+        c.setLineDash([4,3]);
+        c.beginPath();c.moveTo(x0,chartArea.top);c.lineTo(x0,chartArea.bottom);c.stroke();
+        c.beginPath();c.moveTo(x1,chartArea.top);c.lineTo(x1,chartArea.bottom);c.stroke();
+        c.setLineDash([]);
+        c.fillStyle='rgba(184,135,63,.7)';
+        c.font='bold 9px DM Sans,sans-serif';
+        c.textAlign='center';
+        c.fillText('ICP',(x0+x1)/2,chartArea.top+12);
+        c.restore();
+      }catch(e){}
     }
   };
 
@@ -655,6 +669,13 @@ function render(){
       <div class="ccard"><div class="ccard-ttl">Perdidos por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-perd-sem"></canvas></div></div>
     </div>
 
+    <div class="charts-1">
+      <div class="ccard">
+        <div class="ccard-ttl">% por faixa de score · leads perdidos no mês · zona dourada = ICP</div>
+        <div class="cwrap md"><canvas id="ch-perd-score"></canvas></div>
+      </div>
+    </div>
+
     <!-- Motivos + Quando foi criado: LADO A LADO -->
     <div class="side-row">
       <div class="ccard">
@@ -704,6 +725,8 @@ function render(){
   mkBar('ch-gc-sem',  wLabels,ganhos.porCampanha.porSemana.map(x=>x.v),col,{weekly:true});
   mkBar('ch-perd-dia',dLabels,perdidos.porDia.map(x=>x.v),'#c0533a',{maxTicks:20});
   mkBar('ch-perd-sem',wLabels,perdidos.porSemana.map(x=>x.v),'#c0533a',{weekly:true});
+  const snapScorePerd=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.scoreFaixas||[]:[];
+  mkScoreLine('ch-perd-score',perdidos.scoreFaixas||[],'#c0533a',snapScorePerd.length?snapScorePerd:null);
 }
 
 function setProduct(p){PROD=p;if(DATA)render();}
