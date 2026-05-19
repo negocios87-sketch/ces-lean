@@ -15,7 +15,7 @@
   --muted:#8a8277;--border:#e0d9d0;--text:#1c2020;
   --radius:8px;--shadow:0 1px 3px rgba(28,32,32,.06),0 4px 16px rgba(28,32,32,.06);
   /* LEAN = royal blue */
-  --lean:#1d4ed8;--lean2:#3b82f6;--leanBg:#eff6ff;
+  --lean:#4a6fa5;--lean2:#7096c4;--leanBg:#f0f4fb;
   /* CES = petróleo */
   --ces:#0e7490;--ces2:#06b6d4;--cesBg:#ecfeff;
 }
@@ -31,7 +31,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .prod-toggle{display:flex;gap:3px;padding:10px 0}
 .ptog{background:none;border:none;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;padding:6px 20px;cursor:pointer;border-radius:6px;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
 .ptog:hover{color:rgba(255,255,255,.85)}
-.ptog.lean{background:var(--lean);color:#fff}
+.ptog.lean{background:var(--lean);color:#fff;}
 .ptog.ces{background:var(--ces);color:#fff}
 .tb-right{display:flex;align-items:center;gap:12px}
 .tb-meta{font-size:.68rem;color:rgba(255,255,255,.32);letter-spacing:.03em}
@@ -107,6 +107,7 @@ tfoot td{padding:9px 14px;font-weight:700;color:var(--navy);background:var(--gol
 tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .td-name{font-weight:500;color:var(--navy)}
 .td-pct{font-weight:700}
+.ori-row:hover{background:var(--goldP)!important}
 
 /* ── ORIGEM TEMPORAL ── */
 .ot-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px}
@@ -183,7 +184,7 @@ const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/
 
 /* ── Colors ─────────────────────────────────────── */
 const C = {
-  lean:    '#1d4ed8', lean2:'#3b82f6', leanBg:'#eff6ff',
+  lean:    '#4a6fa5', lean2:'#7096c4', leanBg:'#f0f4fb',
   ces:     '#0e7490', ces2: '#06b6d4', cesBg: '#ecfeff',
   ganho:   '#166534', perda:'#991b1b',
 };
@@ -324,15 +325,50 @@ function render(){
       </table>
     </div>` : '';
 
-  /* tabela origens (por produto) */
+  /* tabela origens (por produto) com expand */
   const tblOrigens = ganhos.porProduto.origens?.length ? `
     <div class="sec-lbl2" style="font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:8px">
       Campanha de origem das vendas
       <span style="flex:1;height:1px;background:var(--border);display:block"></span>
     </div>
     <div class="twrap">
-      <table><thead><tr><th>Campanha</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
-      <tbody>${ganhos.porProduto.origens.map(o=>`<tr><td class="td-name">${esc(o.nome)}</td><td>${fmtN(o.t)}</td><td>${brl(o.rev)}</td><td>${brl(o.ticket)}</td></tr>`).join('')}</tbody>
+      <table>
+        <thead><tr><th></th><th>Campanha</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
+        <tbody>
+          ${ganhos.porProduto.origens.map((o,oi)=>`
+            <tr class="ori-row" onclick="toggleOrigemDeals('od-${oi}')" style="cursor:pointer">
+              <td style="width:28px;text-align:center;color:var(--muted);font-size:.8rem" id="ori-arrow-${oi}">▶</td>
+              <td class="td-name">${esc(o.nome)}</td>
+              <td>${fmtN(o.t)}</td>
+              <td>${brl(o.rev)}</td>
+              <td>${brl(o.ticket)}</td>
+            </tr>
+            <tr id="od-${oi}" style="display:none">
+              <td colspan="5" style="padding:0;background:var(--bg)">
+                <table style="width:100%;font-size:.76rem">
+                  <thead style="background:#2d4459">
+                    <tr>
+                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Campanha</th>
+                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Proprietário</th>
+                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Produto</th>
+                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Data Ganho</th>
+                      <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${(o.deals||[]).sort((a,b)=>b.valor-a.valor).map(d=>`
+                      <tr style="border-bottom:1px solid var(--border)">
+                        <td style="padding:7px 14px;font-size:.76rem;color:var(--muted)">${esc(d.campanha.length>40?d.campanha.slice(0,38)+'…':d.campanha)}</td>
+                        <td style="padding:7px 14px;font-size:.76rem;font-weight:500;color:var(--navy)">${esc(d.proprietario)}</td>
+                        <td style="padding:7px 14px;font-size:.76rem;color:var(--text)">${esc(d.produto.length>35?d.produto.slice(0,33)+'…':d.produto)}</td>
+                        <td style="padding:7px 14px;font-size:.76rem;text-align:right;color:var(--muted)">${d.dataGanho}</td>
+                        <td style="padding:7px 14px;font-size:.76rem;font-weight:700;text-align:right;color:var(--navy)">${brl(d.valor)}</td>
+                      </tr>`).join('')}
+                  </tbody>
+                </table>
+              </td>
+            </tr>`).join('')}
+        </tbody>
       </table>
     </div>` : '';
 
@@ -519,6 +555,16 @@ async function doRefresh(){
   document.getElementById('content').innerHTML='<div class="state-wrap"><div class="spinner"></div><span>Atualizando…</span></div>';
   await loadData();
   btn.disabled=false;btn.textContent='↺ Atualizar';
+}
+
+function toggleOrigemDeals(id){
+  const row=document.getElementById(id);
+  if(!row)return;
+  const idx=id.replace('od-','');
+  const arrow=document.getElementById('ori-arrow-'+idx);
+  const open=row.style.display==='none'||row.style.display==='';
+  row.style.display=open?'table-row':'none';
+  if(arrow)arrow.textContent=open?'▼':'▶';
 }
 
 loadData();
