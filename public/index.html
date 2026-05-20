@@ -635,6 +635,24 @@ function render(){
         <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porCampanha.receita)}</div><div class="sub">${brl(ganhos.porCampanha.receita)}</div></div>
         <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div><div class="lbl">Ticket Médio</div><div class="val" style="color:${col}">${ganhos.porCampanha.ticket>0?brlK(ganhos.porCampanha.ticket):'—'}</div><div class="sub">por fechamento</div></div>
       </div>
+      <!-- Produtos vendidos pela campanha -->
+      \${ganhos.porCampanha.produtos?.length ? \`
+        <div class="sec-lbl2" style="margin-bottom:10px">Produtos vendidos pela campanha · nome real<span></span></div>
+        <div class="twrap" style="margin-bottom:16px">
+          <table>
+            <thead><tr><th>Produto</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
+            <tbody>\${ganhos.porCampanha.produtos.map(p=>\`
+              <tr><td class="td-name">\${esc(p.nome)}</td><td>\${fmtN(p.t)}</td><td>\${brl(p.rev)}</td><td>\${brl(p.ticket)}</td></tr>
+            \`).join('')}</tbody>
+            <tfoot><tr>
+              <td>Total</td>
+              <td>\${fmtN(ganhos.porCampanha.produtos.reduce((a,p)=>a+p.t,0))}</td>
+              <td>\${brl(ganhos.porCampanha.produtos.reduce((a,p)=>a+p.rev,0))}</td>
+              <td>—</td>
+            </tr></tfoot>
+          </table>
+        </div>\` : ''}
+
       <div class="charts-2">
         <div class="ccard"><div class="ccard-ttl">Vendas por dia · campanha de origem</div><div class="cwrap"><canvas id="ch-gc-dia"></canvas></div></div>
         <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-gc-sem"></canvas></div></div>
