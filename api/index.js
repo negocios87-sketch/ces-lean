@@ -194,7 +194,7 @@ app.get('/api/report', async (req,res) => {
     const empty = () => ({
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas()}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
-      camp:    { mes:{t:0,rev:0,dia:{},deals:[]}, sem:{} },
+      camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas()}, sem:{} },
     });
     const D={LEAN:empty(),CES:empty()};
@@ -282,6 +282,11 @@ app.get('/api/report', async (req,res) => {
             proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
             valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
           });
+          // Agrupa por nome real do produto
+          const nomeProd=String(deal[PRODUCT_FIELD]||'Não informado').trim();
+          if (!gc.mes.produtos[nomeProd]) gc.mes.produtos[nomeProd]={t:0,rev:0};
+          gc.mes.produtos[nomeProd].t++;
+          gc.mes.produtos[nomeProd].rev+=val;
         }
         if (wSet.has(_w)) {if (!gc.sem[_w]) gc.sem[_w]={t:0,r:0};gc.sem[_w].t++;gc.sem[_w].r+=val;}
       }
@@ -356,6 +361,9 @@ app.get('/api/report', async (req,res) => {
           porSemana:weeks.map(w=>({w,v:p.camp.sem[w]?.t||0,r:p.camp.sem[w]?.r||0})),
           origemTemporal:origTemporalSer(p.ganhos.mes.origTemporal,p.camp.mes.t),
           deals:p.camp.mes.deals,
+          produtos:Object.entries(p.camp.mes.produtos)
+            .sort((a,b)=>b[1].rev-a[1].rev)
+            .map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0})),
         },
       },
       perdidos: {
