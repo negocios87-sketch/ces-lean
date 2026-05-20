@@ -384,5 +384,36 @@ app.get('/api/report', async (req,res) => {
   }
 });
 
+
+// ── DEBUG temporário ─────────────────────────────────────────
+app.get('/api/debug-ganhos', async (req,res) => {
+  if (!API_TOKEN) return res.status(500).json({ok:false,error:'sem token'});
+  try {
+    const deals = await fetchByFilter(FILTER_GANHOS);
+    const now   = new Date();
+    const curYM = now.toISOString().substring(0,7);
+
+    const resultado = deals
+      .filter(d => d.status === 'won')
+      .map(d => ({
+        id:         d.id,
+        titulo:     d.title,
+        valor:      parseFloat(d.value||0),
+        add_time:   d.add_time?.substring(0,10),
+        won_time:   d.won_time?.substring(0,10),
+        won_ym:     d.won_time?.substring(0,7),
+        produto:    String(d[PRODUCT_FIELD]||'—'),
+        campanha:   String(d[CAMPAIGN_FIELD]||'—'),
+        camp_class: classifyCampaign(d[CAMPAIGN_FIELD]),
+        no_mes:     d.won_time?.substring(0,7) === curYM,
+      }))
+      .sort((a,b) => (b.won_time||'').localeCompare(a.won_time||''));
+
+    res.json({ ok:true, total: resultado.length, curYM, resultado: resultado.slice(0,50) });
+  } catch(e) {
+    res.status(500).json({ok:false,error:e.message});
+  }
+});
+
 if (process.env.NODE_ENV!=='production') app.listen(PORT,()=>console.log(`✓ Porta ${PORT}`));
 module.exports = app;
