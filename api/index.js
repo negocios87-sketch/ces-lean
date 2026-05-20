@@ -244,7 +244,6 @@ app.get('/api/report', async (req,res) => {
       const prods=classifyProduct(deal[PRODUCT_FIELD]);
       const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
       const origem=classifyOrigem(deal[CAMPAIGN_FIELD]);
-      if (!prods.length) continue;
       const _ym=toYM(deal.won_time),_w=weekStart(deal.won_time),_d=toYMD(deal.won_time);
       const addYM=toYM(deal.add_time);
       let tempCat;
@@ -252,6 +251,30 @@ app.get('/api/report', async (req,res) => {
       else if (addYM===prevYM) tempCat='prev';
       else if (addYM===prev2YM) tempCat='prev2';
       else tempCat='antes';
+
+      // ── Por Campanha: independente do produto ──────────────
+      if (camp) {
+        const gc=D[camp].camp;
+        if (_ym===curYM) {
+          gc.mes.t++;gc.mes.rev+=val;
+          if (!gc.mes.dia[_d]) gc.mes.dia[_d]={t:0,r:0};
+          gc.mes.dia[_d].t++;gc.mes.dia[_d].r+=val;
+          gc.mes.deals.push({
+            campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
+          });
+          const nomeProd=String(deal[PRODUCT_FIELD]||'Não informado').trim();
+          if (!gc.mes.produtos[nomeProd]) gc.mes.produtos[nomeProd]={t:0,rev:0};
+          gc.mes.produtos[nomeProd].t++;
+          gc.mes.produtos[nomeProd].rev+=val;
+        }
+        if (wSet.has(_w)) {if (!gc.sem[_w]) gc.sem[_w]={t:0,r:0};gc.sem[_w].t++;gc.sem[_w].r+=val;}
+      }
+
+      // ── Por Produto: só classifica produtos LEAN/CES ──────
+      if (!prods.length) continue;
       for (const p of prods) {
         const g=D[p].ganhos;
         if (_ym===curYM) {
@@ -269,26 +292,6 @@ app.get('/api/report', async (req,res) => {
           g.mes.origTemporal[tempCat]=(g.mes.origTemporal[tempCat]||0)+1;
         }
         if (wSet.has(_w)) {if (!g.sem[_w]) g.sem[_w]={t:0,r:0};g.sem[_w].t++;g.sem[_w].r+=val;}
-      }
-      if (camp) {
-        const gc=D[camp].camp;
-        if (_ym===curYM) {
-          gc.mes.t++;gc.mes.rev+=val;
-          if (!gc.mes.dia[_d]) gc.mes.dia[_d]={t:0,r:0};
-          gc.mes.dia[_d].t++;gc.mes.dia[_d].r+=val;
-          gc.mes.deals.push({
-            campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
-            dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
-            proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
-            valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
-          });
-          // Agrupa por nome real do produto
-          const nomeProd=String(deal[PRODUCT_FIELD]||'Não informado').trim();
-          if (!gc.mes.produtos[nomeProd]) gc.mes.produtos[nomeProd]={t:0,rev:0};
-          gc.mes.produtos[nomeProd].t++;
-          gc.mes.produtos[nomeProd].rev+=val;
-        }
-        if (wSet.has(_w)) {if (!gc.sem[_w]) gc.sem[_w]={t:0,r:0};gc.sem[_w].t++;gc.sem[_w].r+=val;}
       }
     }
 
