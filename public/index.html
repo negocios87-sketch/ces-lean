@@ -333,6 +333,80 @@ function mkBar(id,labels,values,col,opts={}){
       }}});
 }
 
+/* ── Bar + Line misto ── */
+function mkBarLine(id,labels,barValues,lineValues,col,opts={}){
+  dk(id);
+  const ctx=document.getElementById(id); if(!ctx)return;
+  const isWeekly=opts.weekly||false;
+  const maxLine=Math.max(...lineValues.filter(v=>v>0),1);
+  charts[id]=new Chart(ctx,{
+    data:{
+      labels,
+      datasets:[
+        {
+          type:'bar',
+          label:'Vendas',
+          data:barValues,
+          backgroundColor:col+'28',
+          borderColor:col,
+          borderWidth:1.5,
+          borderRadius:4,
+          yAxisID:'yBar',
+          datalabels:{
+            display:c=>c.dataset.data[c.dataIndex]>0,
+            formatter:v=>fmtN(v),
+            color:col,
+            font:{family:'DM Sans',size:9,weight:'700'},
+            anchor:'end',align:'top',offset:2,
+          },
+        },
+        {
+          type:'line',
+          label:'Receita',
+          data:lineValues,
+          borderColor:col,
+          backgroundColor:'transparent',
+          borderWidth:2,
+          borderDash:[4,3],
+          pointRadius:c=>c.dataset.data[c.dataIndex]>0?3.5:0,
+          pointBackgroundColor:col,
+          tension:.3,
+          yAxisID:'yLine',
+          datalabels:{display:false},
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:26,right:8}},
+      plugins:{
+        legend:{
+          display:true,position:'bottom',
+          labels:{font:{size:9},padding:10,boxWidth:9,
+            filter:i=>i.text==='Receita'  // mostra só Receita na legenda
+          }
+        },
+        datalabels:{},
+        tooltip:{
+          mode:'index',intersect:false,
+          callbacks:{
+            label:c=>{
+              if(c.dataset.type==='bar') return ` ${fmtN(c.parsed.y)} vendas`;
+              return ` ${brlK(c.parsed.y)}`;
+            }
+          }
+        },
+        delta:{show:false}, // sem delta nos ganhos
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:opts.maxTicks||20},border:{color:'transparent'}},
+        yBar:{type:'linear',position:'left',grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true},
+        yLine:{type:'linear',position:'right',grid:{display:false},ticks:{font:{size:9},maxTicksLimit:4,callback:v=>brlK(v)},border:{color:'transparent'},beginAtZero:true},
+      }
+    }
+  });
+}
+
 /* ── Stacked bar ── */
 function mkStackedBar(id,labels,datasets){
   dk(id);
@@ -741,10 +815,10 @@ function render(){
   mkBar('ch-cri-sem', wLabels,criados.porSemana.map(x=>x.v),col,{weekly:true});
   const snapScore=SNAP&&SNAP.data?SNAP.data[PROD]?.criados?.scoreFaixas||[]:[];
   mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col,snapScore.length?snapScore:null);
-  mkBar('ch-gp-dia',  dLabels,ganhos.porProduto.porDia.map(x=>x.v),col,{maxTicks:20});
-  mkBar('ch-gp-sem',  wLabels,ganhos.porProduto.porSemana.map(x=>x.v),col,{weekly:true});
-  mkBar('ch-gc-dia',  dLabels,ganhos.porCampanha.porDia.map(x=>x.v),col,{maxTicks:20});
-  mkBar('ch-gc-sem',  wLabels,ganhos.porCampanha.porSemana.map(x=>x.v),col,{weekly:true});
+  mkBarLine('ch-gp-dia', dLabels,ganhos.porProduto.porDia.map(x=>x.v),    ganhos.porProduto.porDia.map(x=>x.r),    col,{maxTicks:20});
+  mkBarLine('ch-gp-sem', wLabels,ganhos.porProduto.porSemana.map(x=>x.v), ganhos.porProduto.porSemana.map(x=>x.r), col,{weekly:false});
+  mkBarLine('ch-gc-dia', dLabels,ganhos.porCampanha.porDia.map(x=>x.v),    ganhos.porCampanha.porDia.map(x=>x.r),    col,{maxTicks:20});
+  mkBarLine('ch-gc-sem', wLabels,ganhos.porCampanha.porSemana.map(x=>x.v), ganhos.porCampanha.porSemana.map(x=>x.r), col,{weekly:false});
   mkBar('ch-perd-dia',dLabels,perdidos.porDia.map(x=>x.v),'#c0533a',{maxTicks:20});
   mkBar('ch-perd-sem',wLabels,perdidos.porSemana.map(x=>x.v),'#c0533a',{weekly:true});
   const snapScorePerd=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.scoreFaixas||[]:[];
