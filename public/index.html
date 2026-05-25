@@ -214,6 +214,7 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
     </div>
   </div>
   <div class="tb-right">
+    <select id="selMes" onchange="onMesChange()" style="background:#2d4459;border:1px solid rgba(255,255,255,.18);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:6px 10px;cursor:pointer;outline:none"></select>
     <span class="tb-meta" id="tbMeta">—</span>
     <button class="tbtn" onclick="openHistorico()">📋 Histórico</button>
     <button class="tbtn-pdf" id="btnPdf" onclick="gerarPDF()" disabled>🖨 PDF</button>
@@ -264,7 +265,34 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 </div>
 
 <script>
-let DATA=null, PROD='lean';
+let DATA=null, PROD='lean', MES_FILTRO=null;
+
+/* ── Preenche seletor de meses ── */
+function buildMesSelector(){
+  const sel=document.getElementById('selMes');
+  const now=new Date();
+  const start=new Date(2026,0,1); // Jan/2026
+  const meses=[];
+  const d=new Date(start);
+  while(d<=now){
+    const ym=d.toISOString().substring(0,7);
+    meses.push(ym);
+    d.setMonth(d.getMonth()+1);
+  }
+  sel.innerHTML=meses.reverse().map(ym=>{
+    const[y,m]=ym.split('-');
+    const nome=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+m-1]+'/'+y;
+    return`<option value="${ym}">${nome}</option>`;
+  }).join('');
+  // Seleciona mês atual por padrão
+  sel.value=now.toISOString().substring(0,7);
+  MES_FILTRO=sel.value;
+}
+
+function onMesChange(){
+  MES_FILTRO=document.getElementById('selMes').value;
+  loadData();
+}
 const charts={};
 
 const brl  = n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
@@ -1300,7 +1328,7 @@ async function loadData(){
   const err=document.getElementById('errBanner');
   err.style.display='none';
   try{
-    const r=await fetch('/api/report');
+    const r=await fetch(`/api/report?mes=${MES_FILTRO||''}`);
     const j=await r.json();
     if(!j.ok)throw new Error(j.error);
     DATA=j;render();updateCmpBtn();
@@ -1319,6 +1347,7 @@ async function doRefresh(){
   btn.disabled=false;btn.textContent='↺ Atualizar';
 }
 
+buildMesSelector();
 loadData();
 </script>
 
