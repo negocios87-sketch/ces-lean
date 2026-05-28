@@ -140,6 +140,12 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .an-val{width:28px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
 .an-pct{width:32px;text-align:right;font-size:.7rem;color:var(--muted)}
 .motivo-tog{display:flex;gap:6px;margin-bottom:18px}
+.funis-wrap{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:24px;align-items:start}
+.funis-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto}
+.funis-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.funis-chart-ttl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.funis-chart-canvas{position:relative;height:240px}
+@media(max-width:900px){.funis-wrap{grid-template-columns:1fr}}
 .an-grid{align-items:stretch}
 .an-card{display:flex;flex-direction:column}
 .an-rows{flex:1}
@@ -974,14 +980,7 @@ function renderAnalitica(){
       </div>
     </div>
 
-    <div class="sec-block">
-      <div class="sec-eyebrow">Perdidos no mês · Data de Perda</div>
-      <div class="sec-title">Perfil por Motivo de Perda
-        <span class="sec-date-tag tag-perda">${fmtN(totPerdidos)} perdidos no total</span>
-        <span class="sec-date-tag" style="background:#f5e9d6;color:#8c6428">${fmtN(countMotivo)} com "${MOTIVO_AN}"</span>
-      </div>
-      <div class="sec-divider div-perda"></div>
-    </div>
+    
 
     <div class="motivo-tog">
       <button class="mtog ${MOTIVO_AN==='Sem perfil'?'active':''}"    onclick="setMotivoAn('Sem perfil')">Sem Perfil</button>
@@ -995,6 +994,37 @@ function renderAnalitica(){
       ${anCard('Escolaridade', dados?.escolaridade, col)}
     </div>
   `;
+  setTimeout(()=>renderFunisChart(pd?.criados?.funis||[],col),50);
+}
+
+
+function renderFunisChart(funis, col){
+  dk('ch-funis-rosca');
+  const ctx=document.getElementById('ch-funis-rosca');
+  if(!ctx||!funis||!funis.length) return;
+  const PAL=['#4a6fa5','#0e7490','#b8873f','#4a7c6a','#c0533a','#7b5ea7','#2d7da8','#c47a2d'];
+  charts['ch-funis-rosca']=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:funis.map(f=>f.nome),
+      datasets:[{
+        data:funis.map(f=>f.t),
+        backgroundColor:funis.map((_,i)=>PAL[i%PAL.length]),
+        borderColor:'#fff',borderWidth:2,hoverOffset:6,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:9},padding:8,boxWidth:9}},
+        datalabels:{
+          display:c=>c.dataset.data[c.dataIndex]>0,
+          formatter:(v,c)=>{const tot=c.dataset.data.reduce((s,x)=>s+x,0);return tot>0?Math.round(v/tot*100)+'%':'';},
+          color:'#fff',font:{family:'DM Sans',size:9,weight:'700'},
+        },
+        tooltip:{callbacks:{label:c=>` ${fmtN(c.parsed)} leads (${Math.round(c.parsed/c.dataset.data.reduce((s,x)=>s+x,0)*100)}%)`}},
+      }
+    }
+  });
 }
 
 function toggleOutros(id){
