@@ -1,1900 +1,564 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CES & LEAN · Board Academy</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f2ede6;--surface:#fff;--navy:#1c2b3a;
-  --gold:#b8873f;--goldP:#f5e9d6;--sage:#4a7c6a;--rust:#c0533a;
-  --muted:#8a8277;--border:#e0d9d0;--text:#1c2020;
-  --radius:8px;--shadow:0 1px 3px rgba(28,32,32,.06),0 4px 16px rgba(28,32,32,.06);
-  --lean:#4a6fa5;--lean2:#7096c4;--leanBg:#f0f4fb;
-  --ces:#0e7490;--ces2:#06b6d4;--cesBg:#ecfeff;
-}
-html{font-size:14px}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+const express = require('express');
+const app  = express();
+const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
-.topbar{background:var(--navy);padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
-.tb-left{display:flex;align-items:center;gap:20px}
-.tb-logo{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--gold);letter-spacing:.05em}
-.tb-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:300;color:rgba(255,255,255,.5);letter-spacing:.02em}
-.tb-sep{width:1px;height:30px;background:rgba(255,255,255,.12)}
-.prod-toggle{display:flex;gap:3px;padding:10px 0}
-.ptog{background:none;border:none;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;padding:6px 20px;cursor:pointer;border-radius:6px;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
-.ptog:hover{color:rgba(255,255,255,.85)}
-.ptog.lean{background:var(--lean);color:#fff}
-.ptog.ces{background:var(--ces);color:#fff}
-.tb-right{display:flex;align-items:center;gap:12px}
-.tb-meta{font-size:.68rem;color:rgba(255,255,255,.32);letter-spacing:.03em}
-.tbtn{background:none;border:1px solid rgba(255,255,255,.18);border-radius:6px;color:rgba(255,255,255,.7);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;padding:6px 14px;cursor:pointer;transition:all .15s}
-.tbtn:hover{background:rgba(255,255,255,.1);color:#fff}
-.tbtn:disabled{opacity:.4;cursor:default}
+const API_TOKEN       = process.env.PIPEDRIVE_TOKEN;
+const ORG             = process.env.PIPEDRIVE_ORG     || 'boardacademy';
+const FILTER_CRIADOS  = process.env.FILTER_CRIADOS    || '1631100';
+const FILTER_GANHOS   = process.env.FILTER_GANHOS     || '1647346';
+const FILTER_PERDIDOS = process.env.FILTER_PERDIDOS   || '1647390';
+const PRODUCT_FIELD   = '8bdce76ba66f0fed0280918a4845190c92899ed5';
+const CAMPAIGN_FIELD  = 'ae03fa460a108b8cdfa87e97ebca24379d2779d6';
 
-.page{max-width:1200px;margin:0 auto;padding:28px 24px 64px}
+// ── Score fields ──────────────────────────────────────────────
+const FIELD_RENDA        = 'c95b2c453828853409c0a1f5d5f1a6ab30eebebf';
+const FIELD_CARGO        = '718c8aba81211c883ffd9f4616f75ee22a10b2da';
+const FIELD_IDADE        = '83d18fca9a1f15041acebd03956039213f47c75a';
+const FIELD_ESCOLARIDADE = '93ce10ba72f6b8aab8a4d18d699ddeb36b12ab1f';
+const SCORE_RULES_URL    = process.env.SCORE_RULES_URL ||
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=422517996&single=true&output=csv';
 
-.ph-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border)}
-.ph-eye{font-size:.64rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
-.ph-ttl{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;color:var(--navy);line-height:1.1}
-.ph-sub{font-size:.8rem;color:var(--muted);margin-top:6px}
-.ph-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
-.badge-lean{background:var(--leanBg);color:var(--lean)}
-.badge-ces{background:var(--cesBg);color:var(--ces)}
+const SCORE_DEFAULTS = { renda:1.1, cargo:0.9, idade:0.5, escolaridade:1.0 };
+const SCORE_FAIXAS = [
+  {label:'De 2 a 2,9', min:2,  max:3},
+  {label:'De 3 a 3,9', min:3,  max:4},
+  {label:'De 4 a 4,9', min:4,  max:5},
+  {label:'De 5 a 5,9', min:5,  max:6},
+  {label:'De 6 a 6,9', min:6,  max:7},
+  {label:'De 7 a 7,9', min:7,  max:8},
+  {label:'De 8 a 8,9', min:8,  max:9},
+  {label:'De 9 a 10',  min:9,  max:10.000001},
+];
 
-.sec-block{margin-top:36px;margin-bottom:16px}
-.sec-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-.sec-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1.1}
-.sec-date-tag{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-left:10px;vertical-align:middle;position:relative;top:-2px}
-.tag-ganho{background:#dcfce7;color:#166534}
-.tag-perda{background:#fee2e2;color:#991b1b}
-.tag-criado{background:var(--leanBg);color:var(--lean)}
-.sec-divider{height:2px;border-radius:2px;margin-top:10px}
-.div-lean{background:linear-gradient(90deg,var(--lean),var(--lean2))}
-.div-ces{background:linear-gradient(90deg,var(--ces),var(--ces2))}
-.div-ganho{background:linear-gradient(90deg,#166534,#4ade80)}
-.div-perda{background:linear-gradient(90deg,#991b1b,#f87171)}
+const LEAN_IDS = new Set(['22395618474','22402104677','22406191339']);
 
-.kpi-row{display:grid;gap:10px;margin-bottom:18px}
-.kpi5{grid-template-columns:repeat(5,1fr)}
-.kpi3{grid-template-columns:repeat(3,1fr)}
-.kpi2{grid-template-columns:repeat(2,1fr)}
-.kpi1{grid-template-columns:1fr}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-.kpi-accent{position:absolute;top:0;left:0;right:0;height:3px}
-.kpi .lbl{font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.kpi .val{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:700;color:var(--navy);line-height:1}
-.kpi .sub{font-size:.69rem;color:var(--muted);margin-top:5px}
-
-.charts-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.charts-1{margin-bottom:16px}
-.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 14px;box-shadow:var(--shadow)}
-.ccard-ttl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.cwrap{position:relative;height:170px}
-.cwrap.md{height:200px}
-
-/* Linha de dois painéis lado a lado (tabela + ot-card) */
-.side-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;align-items:start}
-
-.gtog-row{display:flex;gap:6px;margin-bottom:16px}
-.gtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
-.gtog:hover{border-color:var(--navy);color:var(--navy)}
-.gtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
-
-.twrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto}
-table{width:100%;border-collapse:collapse;font-size:.8rem}
-thead{background:var(--navy)}
-thead th{color:rgba(255,255,255,.75);font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left;white-space:nowrap}
-thead th:not(:first-child){text-align:right}
-tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--bg)}
-tbody td{padding:9px 14px;white-space:nowrap}
-tbody td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
-tfoot td{padding:9px 14px;font-weight:700;color:var(--navy);background:var(--goldP);border-top:1.5px solid var(--border)}
-tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
-.td-name{font-weight:500;color:var(--navy)}
-.ori-row:hover{background:var(--goldP)!important}
-tr.outros-hidden{display:none!important}
-
-.ot-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.ot-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.ot-rows{display:flex;flex-direction:column;gap:10px}
-.ot-row{display:flex;align-items:center;gap:10px}
-.ot-label{width:130px;flex-shrink:0;font-size:.78rem;color:var(--text)}
-.ot-track{flex:1;background:var(--border);border-radius:3px;height:7px}
-.ot-fill{height:7px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.ot-val{width:28px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
-.ot-pct{width:34px;text-align:right;font-size:.7rem;color:var(--muted)}
-
-.motivos{display:flex;flex-direction:column;gap:9px}
-.motivo-row{display:flex;align-items:center;gap:10px}
-.motivo-name{width:150px;flex-shrink:0;font-size:.77rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.motivo-track{flex:1;background:var(--border);border-radius:3px;height:5px}
-.motivo-fill{height:5px;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.motivo-pct{width:34px;text-align:right;font-size:.69rem;color:var(--muted)}
-.motivo-count{width:26px;text-align:right;font-size:.77rem;font-weight:600;color:var(--navy)}
-
-.sec-lbl2{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;display:flex;align-items:center;gap:8px}
-.sec-lbl2 span{flex:1;height:1px;background:var(--border);display:block}
-
-.state-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:14px;color:var(--muted)}
-.spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.errbanner{background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);color:#991b1b;padding:12px 16px;font-size:.82rem;margin-bottom:20px;display:none}
-.pfooter{margin-top:32px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
-.pfooter span{font-size:.67rem;color:var(--muted)}
-
-/* ── ABA ANALÍTICA ── */
-#pageAnalitica{display:none}
-.an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.an-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-.an-card-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.an-row{display:flex;align-items:center;gap:8px}
-.an-lbl{width:0;flex:1;min-width:0;font-size:.78rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.an-track{width:60px;flex-shrink:0;background:var(--border);border-radius:3px;height:5px}
-.an-fill{height:5px;border-radius:3px;transition:width .5s}
-.an-val{width:28px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
-.an-pct{width:32px;text-align:right;font-size:.7rem;color:var(--muted)}
-.motivo-tog{display:flex;gap:6px;margin-bottom:18px}
-.funis-wrap{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:24px;align-items:start}
-.funis-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto}
-.funis-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
-.funis-chart-ttl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.funis-chart-canvas{position:relative;height:240px}
-@media(max-width:900px){.funis-wrap{grid-template-columns:1fr}}
-.an-grid{align-items:stretch;overflow:hidden}
-.an-card{min-width:0;overflow:hidden}
-.an-card{display:flex;flex-direction:column}
-.an-rows{flex:1}
-.an-item-wrap{border-bottom:1px solid var(--border)}
-.an-item-wrap:last-child{border-bottom:none}
-.an-row{cursor:pointer;padding:5px 0;border-radius:4px;transition:background .1s}
-.an-row:hover{background:var(--bg)}
-.an-row-toggle{width:14px;flex-shrink:0;font-size:.65rem;color:var(--muted);text-align:center}
-.an-detail{display:none;background:var(--bg);border-radius:6px;margin:4px 0 6px}
-.an-detail.open{display:block}
-.an-detail-table{width:100%;border-collapse:collapse}
-.an-detail-table td{padding:4px 10px;font-size:.72rem;border-bottom:1px solid var(--border)}
-.an-detail-table td:last-child{text-align:right;font-weight:600;color:var(--navy);width:32px}
-.an-detail-table td:first-child{color:var(--muted)}
-.an-detail-table tr:last-child td{border-bottom:none}
-.mtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
-.mtog:hover{border-color:var(--navy);color:var(--navy)}
-.mtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
-@media(max-width:900px){.an-grid{grid-template-columns:1fr 1fr}}
-
-@media(max-width:900px){
-  .kpi5,.kpi3{grid-template-columns:1fr 1fr}
-  .charts-2,.side-row{grid-template-columns:1fr}
-}
-
-/* ── SNAPSHOT / COMPARAÇÃO / HISTÓRICO ── */
-.tbtn-snap{background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.4);border-radius:6px;color:#f5c518;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s}
-.tbtn-snap:hover{background:rgba(245,197,24,.28)}
-.tbtn-cmp{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);border-radius:6px;color:#4ade80;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s}
-.tbtn-cmp:hover{background:rgba(74,222,128,.22)}
-.tbtn-cmp:disabled{opacity:.35;cursor:default}
-.tbtn-clrcmp{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);border-radius:6px;color:#f87171;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s;display:none}
-.tbtn-clrcmp:hover{background:rgba(248,113,113,.22)}
-.tbtn-pdf{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);border-radius:6px;color:#38bdf8;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s}
-.tbtn-pdf:hover{background:rgba(56,189,248,.22)}
-.tbtn-pdf:disabled{opacity:.35;cursor:default}
-
-/* Modal de comparação */
-.cmp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9800;display:none;align-items:center;justify-content:center}
-.cmp-overlay.open{display:flex}
-.cmp-modal{background:var(--surface);border-radius:14px;padding:32px 28px;width:420px;max-width:92vw;box-shadow:0 24px 80px rgba(0,0,0,.4)}
-.cmp-modal h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:6px}
-.cmp-modal p{font-size:.78rem;color:var(--muted);margin-bottom:20px}
-.cmp-drop-area{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:16px}
-.cmp-drop-area:hover{border-color:var(--lean)}
-.cmp-drop-area p{color:var(--muted);font-size:.82rem;margin:0}
-.cmp-drop-area input{display:none}
-.cmp-modal-btns{display:flex;gap:8px;justify-content:flex-end}
-.cmp-btn{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer}
-.cmp-btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted)}
-
-/* Indicador de comparação ativa */
-.cmp-banner{background:linear-gradient(90deg,#166534,#15803d);color:#fff;padding:8px 24px;font-size:.75rem;font-weight:600;letter-spacing:.04em;display:none;align-items:center;justify-content:space-between}
-.cmp-banner.on{display:flex}
-.cmp-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:5px;padding:3px 10px;font-size:.72rem;cursor:pointer}
-
-/* Delta badges nos KPIs */
-.kpi-delta{font-size:.68rem;font-weight:700;margin-top:4px;display:flex;align-items:center;gap:4px}
-.delta-up{color:#4ade80}
-.delta-dn{color:#f87171}
-.delta-eq{color:var(--muted)}
-
-/* Delta nos motivos */
-.motivo-delta{width:42px;text-align:right;font-size:.68rem;font-weight:700}
-
-/* Histórico overlay */
-.hist-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9700;display:none;align-items:flex-start;justify-content:center;padding-top:48px}
-.hist-overlay.open{display:flex}
-.hist-modal{background:var(--bg);border-radius:14px;width:720px;max-width:95vw;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.45)}
-.hist-header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
-.hist-header h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#fff}
-.hist-header button{background:none;border:none;color:rgba(255,255,255,.6);font-size:1.2rem;cursor:pointer;padding:4px 8px}
-.hist-list{overflow-y:auto;flex:1;padding:16px}
-.hist-empty{padding:40px;text-align:center;color:var(--muted);font-size:.85rem}
-.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-.hist-item-left h4{font-family:'Fraunces',serif;font-size:.95rem;font-weight:600;color:var(--navy)}
-.hist-item-left p{font-size:.72rem;color:var(--muted);margin-top:2px}
-.hist-item-btns{display:flex;gap:8px}
-.hist-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer}
-.hist-btn-del{background:transparent;border:1px solid var(--border);color:var(--rust)}
-.hist-btn-pdf{background:var(--gold);color:#fff}
-
-@media print{
-  @page{size:A4 portrait;margin:10mm}
-  body{background:#fff!important}
-  .topbar,.cmp-banner,#pToolbar,.state-wrap{display:none!important}
-  .page{max-width:100%!important;padding:0!important}
-  .print-page-break{page-break-before:always}
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-}
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div class="tb-left">
-    <span class="tb-logo">Board Academy</span>
-    <div class="tb-sep"></div>
-    <span class="tb-title">Inteligência Comercial</span>
-    <div class="tb-sep"></div>
-    <div class="prod-toggle">
-      <button class="ptog lean" id="togLean" onclick="setProduct('lean')">LEAN</button>
-      <button class="ptog"      id="togCes"  onclick="setProduct('ces')">CES</button>
-    </div>
-    <div class="tb-sep"></div>
-    <div style="display:flex;gap:3px;padding:10px 0">
-      <button class="ptog" id="tabMain"     onclick="setTab('main')"     style="background:rgba(255,255,255,.15);color:#fff">Dashboard</button>
-      <button class="ptog" id="tabAnalitica" onclick="setTab('analitica')" style="">Analítica</button>
-    </div>
-  </div>
-  <div class="tb-right">
-    <select id="selMes" onchange="onMesChange()" style="background:#2d4459;border:1px solid rgba(255,255,255,.18);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:6px 10px;cursor:pointer;outline:none"></select>
-    <span class="tb-meta" id="tbMeta">—</span>
-    <button class="tbtn" onclick="openHistorico()">📋 Histórico</button>
-    <button class="tbtn-pdf" id="btnPdf" onclick="gerarPDF()" disabled>🖨 PDF</button>
-    <button class="tbtn-snap" onclick="doSnapshot()">📸 Snapshot</button>
-    <button class="tbtn-cmp" id="btnComparar" onclick="openComparar()" disabled>⇄ Comparar</button>
-    <button class="tbtn-clrcmp" id="btnLimparCmp" onclick="limparComparacao()">✕ Comparação</button>
-    <button class="tbtn" id="btnRefresh" onclick="doRefresh()">↺ Atualizar</button>
-  </div>
-</div>
-
-<!-- Banner comparação ativa -->
-<div class="cmp-banner" id="cmpBanner">
-  <span id="cmpBannerTxt">Comparando com: —</span>
-  <button onclick="limparComparacao()">✕ Limpar</button>
-</div>
-
-<!-- Modal comparar -->
-<div class="cmp-overlay" id="cmpOverlay">
-  <div class="cmp-modal">
-    <h3>Carregar Snapshot para Comparar</h3>
-    <p>Selecione um arquivo <strong>.json</strong> salvo anteriormente</p>
-    <div class="cmp-drop-area" onclick="document.getElementById('cmpFileInput').click()">
-      <p>📂 Clique para selecionar o arquivo JSON</p>
-      <input type="file" id="cmpFileInput" accept=".json" onchange="onCmpFile(event)">
-    </div>
-    <div class="cmp-modal-btns">
-      <button class="cmp-btn cmp-btn-cancel" onclick="closeCmpModal()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal histórico -->
-<div class="hist-overlay" id="histOverlay">
-  <div class="hist-modal">
-    <div class="hist-header">
-      <h3>📋 Histórico de Snapshots</h3>
-      <button onclick="closeHistorico()">✕</button>
-    </div>
-    <div class="hist-list" id="histList"></div>
-  </div>
-</div>
-
-<div id="pageAnalitica">
-  <div class="page">
-    <div class="errbanner" id="errBannerAn"></div>
-    <div id="contentAnalitica">
-      <div class="state-wrap"><div class="spinner"></div><span>Carregando…</span></div>
-    </div>
-  </div>
-</div>
-
-<div id="pageMain">
-<div class="page">
-  <div class="errbanner" id="errBanner"></div>
-  <div id="content">
-    <div class="state-wrap"><div class="spinner"></div><span>Carregando dados…</span></div>
-  </div>
-</div>
-
-<script>
-let DATA=null, PROD='lean', MES_FILTRO=null;
-
-/* ── Preenche seletor de meses ── */
-function buildMesSelector(){
-  const sel=document.getElementById('selMes');
-  const now=new Date();
-  const start=new Date(2026,0,1); // Jan/2026
-  const meses=[];
-  const d=new Date(start);
-  while(d<=now){
-    const ym=d.toISOString().substring(0,7);
-    meses.push(ym);
-    d.setMonth(d.getMonth()+1);
-  }
-  sel.innerHTML=meses.reverse().map(ym=>{
-    const[y,m]=ym.split('-');
-    const nome=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+m-1]+'/'+y;
-    return`<option value="${ym}">${nome}</option>`;
-  }).join('');
-  // Seleciona mês atual por padrão
-  sel.value=now.toISOString().substring(0,7);
-  MES_FILTRO=sel.value;
-}
-
-function onMesChange(){
-  MES_FILTRO=document.getElementById('selMes').value;
-  loadData();
-}
-const charts={};
-
-const brl  = n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
-const brlK = n=>n>=1000?'R$'+(n/1000).toFixed(0)+'k':'R$'+Math.round(n);
-const fmtN = n=>Math.round(n).toLocaleString('pt-BR');
-const fmtW = w=>{const[,m,d]=w.split('-');return`${d}/${m}`;};
-const fmtD = d=>{const[,,day]=d.split('-');return String(+day);};
-const fmtM = ym=>{if(!ym)return'—';const[y,mo]=ym.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y;};
-const esc  = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-const C={lean:'#4a6fa5',lean2:'#7096c4',ces:'#0e7490',ces2:'#06b6d4'};
-const color  = p=>p==='lean'?C.lean:C.ces;
-const color2 = p=>p==='lean'?C.lean2:C.ces2;
-
-Chart.register(ChartDataLabels);
-Chart.defaults.font={family:'DM Sans',size:10};
-Chart.defaults.color='#8a8277';
-const GC='rgba(28,32,32,.06)';
-
-function dk(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-
-/* ── Delta plugin ── */
-const deltaPlugin={
-  id:'delta',
-  afterDatasetsDraw(chart){
-    if(!chart.options.plugins?.delta?.show)return;
-    const{ctx}=chart;
-    const meta=chart.getDatasetMeta(0);
-    const data=chart.data.datasets[0].data;
-    for(let i=1;i<meta.data.length;i++){
-      const prev=data[i-1],curr=data[i];
-      if(!prev||!curr)continue;
-      const pct=(curr-prev)/prev*100;
-      const isPos=pct>=0;
-      const midX=(meta.data[i-1].x+meta.data[i].x)/2;
-      const topY=Math.min(meta.data[i-1].y,meta.data[i].y)-18;
-      ctx.save();
-      ctx.font='bold 9px DM Sans,sans-serif';
-      ctx.fillStyle=isPos?'#166534':'#991b1b';
-      ctx.textAlign='center';
-      ctx.fillText((isPos?'▲':'▼')+Math.abs(pct).toFixed(0)+'%',midX,topY);
-      ctx.restore();
-    }
-  }
+// Classificação de times por pipeline
+const TIMES = {
+  'Time Diarley': new Set([39]),
+  'Time Denise':  new Set([46,51,87,88]),
 };
-Chart.register(deltaPlugin);
+function classifyTime(pipeId){
+  const id = parseInt(pipeId)||0;
+  if (TIMES['Time Diarley'].has(id)) return 'Time Diarley';
+  if (TIMES['Time Denise'].has(id))  return 'Time Denise';
+  return 'Outros';
+}
+const CES_IDS  = new Set(['22734871401','23367012467']);
 
-/* ── Bar simples ── */
-function mkBar(id,labels,values,col,opts={}){
-  dk(id);
-  const ctx=document.getElementById(id);if(!ctx)return;
-  const isWeekly=opts.weekly||false;
-  charts[id]=new Chart(ctx,{type:'bar',
-    data:{labels,datasets:[{data:values,backgroundColor:col+'28',borderColor:col,borderWidth:1.5,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:isWeekly?30:22}},
-      plugins:{
-        legend:{display:false},
-        datalabels:{display:c=>c.dataset.data[c.dataIndex]>0,formatter:v=>fmtN(v),color:col,font:{family:'DM Sans',size:9,weight:'700'},anchor:'end',align:'top',offset:2},
-        tooltip:{callbacks:{label:c=>' '+fmtN(c.parsed.y)}},
-        delta:{show:isWeekly},
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:opts.maxTicks||20},border:{color:'transparent'}},
-        y:{grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true}
-      }}});
+// ── Classificações ────────────────────────────────────────────
+function classifyProduct(v) {
+  if (!v) return [];
+  const s=String(v), r=[];
+  if (/lean/i.test(s)&&!/livro/i.test(s))   r.push('LEAN');
+  if (/ces/i.test(s) &&!/ascesso/i.test(s)) r.push('CES');
+  return r;
+}
+function classifyCampaign(v) {
+  if (!v) return null;
+  const s=String(v).trim();
+  if (LEAN_IDS.has(s)||(/lean/i.test(s)&&!/ascesso/i.test(s))) return 'LEAN';
+  if (CES_IDS.has(s) ||(/ces/i.test(s) &&!/ascesso/i.test(s))) return 'CES';
+  return null;
+}
+function classifyOrigem(v) {
+  if (!v) return 'Outras Origens';
+  const s=String(v).trim();
+  if (/pfcc/i.test(s)) return 'PFCC';
+  if (LEAN_IDS.has(s)||(/lean/i.test(s)&&!/ascesso/i.test(s))) return 'LEAN';
+  if (CES_IDS.has(s) ||(/ces/i.test(s) &&!/ascesso/i.test(s))) return 'CES';
+  return 'Outras Origens';
 }
 
-/* ── Bar + Line misto ── */
-function mkBarLine(id,labels,barValues,lineValues,col,opts={}){
-  dk(id);
-  const ctx=document.getElementById(id); if(!ctx)return;
-  const isWeekly=opts.weekly||false;
-  const maxLine=Math.max(...lineValues.filter(v=>v>0),1);
-  charts[id]=new Chart(ctx,{
-    data:{
-      labels,
-      datasets:[
-        {
-          type:'bar',
-          label:'Vendas',
-          data:barValues,
-          backgroundColor:col+'28',
-          borderColor:col,
-          borderWidth:1.5,
-          borderRadius:4,
-          yAxisID:'yBar',
-          datalabels:{
-            display:c=>c.dataset.data[c.dataIndex]>0,
-            formatter:v=>fmtN(v),
-            color:col,
-            font:{family:'DM Sans',size:9,weight:'700'},
-            anchor:'end',align:'top',offset:2,
-          },
-        },
-        {
-          type:'line',
-          label:'Receita',
-          data:lineValues,
-          borderColor:col,
-          backgroundColor:'transparent',
-          borderWidth:2,
-          borderDash:[4,3],
-          pointRadius:c=>c.dataset.data[c.dataIndex]>0?3.5:0,
-          pointBackgroundColor:col,
-          tension:.3,
-          yAxisID:'yLine',
-          datalabels:{display:false},
+// ── Score ─────────────────────────────────────────────────────
+function normalizarTexto(v) {
+  return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+}
+function parseCsvLine(line, delim) {
+  const out=[]; let cur=''; let inQ=false;
+  for (let i=0;i<line.length;i++) {
+    const ch=line[i],nx=line[i+1];
+    if (ch==='"'&&inQ&&nx==='"'){cur+='"';i++;continue;}
+    if (ch==='"'){inQ=!inQ;continue;}
+    if (ch===delim&&!inQ){out.push(cur);cur='';continue;}
+    cur+=ch;
+  }
+  out.push(cur);
+  return out.map(x=>x.trim());
+}
+function parsePontuacao(v) {
+  const n=parseFloat(String(v||'').replace(',','.'));
+  return Number.isFinite(n)?n:null;
+}
+async function carregarRegrasScore() {
+  try {
+    const r=await fetch(SCORE_RULES_URL,{cache:'no-store'});
+    if (!r.ok) return [];
+    const txt=await r.text();
+    const linhas=txt.split(/\r?\n/).filter(l=>l.trim());
+    if (!linhas.length) return [];
+    const delim=linhas[0].includes('\t')?'\t':',';
+    return linhas.slice(1).map(line=>{
+      const cols=parseCsvLine(line,delim);
+      const tipo=normalizarTexto(cols[0]);
+      const contem=String(cols[1]||'').trim();
+      const pontuacao=parsePontuacao(cols[2]);
+      const legenda=String(cols[4]||cols[3]||contem).trim();
+      return {tipo,contem,contemNorm:normalizarTexto(contem),pontuacao,legenda};
+    }).filter(r=>r.tipo&&r.pontuacao!==null);
+  } catch(e) { console.warn('Score rules failed:',e.message); return []; }
+}
+function scorePorTipo(tipo, texto, regras) {
+  const textoNorm=normalizarTexto(texto);
+  if (!textoNorm) return SCORE_DEFAULTS[tipo]||0;
+  const match=regras.find(r=>r.tipo===tipo&&r.contemNorm&&textoNorm.includes(r.contemNorm));
+  return match?match.pontuacao:(SCORE_DEFAULTS[tipo]||0);
+}
+function legendaDoTipo(tipo, texto, regras) {
+  const textoNorm=normalizarTexto(texto);
+  if (!textoNorm) {
+    // Usa legenda da linha com contem vazio se existir
+    const emptyMatch=regras.find(r=>r.tipo===tipo&&!r.contemNorm);
+    return { legenda: emptyMatch?(emptyMatch.legenda||'Não informado'):'Não informado', raw: null };
+  }
+  const match=regras.find(r=>r.tipo===tipo&&r.contemNorm&&textoNorm.includes(r.contemNorm));
+  if (match) return { legenda: match.legenda||match.contem, raw: null };
+  // Não bateu — Outros, guarda valor bruto
+  return { legenda: 'Outros', raw: String(texto||'').trim().slice(0,80) };
+}
+
+function calcularScore(deal, regras) {
+  return +(
+    scorePorTipo('renda',       deal[FIELD_RENDA],       regras)+
+    scorePorTipo('cargo',       deal[FIELD_CARGO],       regras)+
+    scorePorTipo('idade',       deal[FIELD_IDADE],       regras)+
+    scorePorTipo('escolaridade',deal[FIELD_ESCOLARIDADE],regras)
+  ).toFixed(2);
+}
+function faixaScore(score) {
+  const f=SCORE_FAIXAS.find(x=>score>=x.min&&score<x.max);
+  return f?f.label:null;
+}
+function emptyFaixas() {
+  return Object.fromEntries(SCORE_FAIXAS.map(f=>[f.label,0]));
+}
+
+// ── Date utils ────────────────────────────────────────────────
+const toYM  = d=>d?String(d).substring(0,7):null;
+const toYMD = d=>d?String(d).substring(0,10):null;
+
+function weekStart(dateStr) {
+  if (!dateStr) return null;
+  const d=new Date(String(dateStr).substring(0,10)+'T00:00:00Z');
+  const day=d.getUTCDay();
+  d.setUTCDate(d.getUTCDate()-((day-4+7)%7));
+  return d.toISOString().substring(0,10);
+}
+function getWeeks(n=8) {
+  const now=new Date();
+  const day=now.getUTCDay();
+  const currThu=new Date(now);
+  currThu.setUTCDate(now.getUTCDate()-((day-4+7)%7));
+  currThu.setUTCHours(0,0,0,0);
+  const base=new Date(currThu);
+  base.setUTCDate(currThu.getUTCDate()-7);
+  const weeks=[];
+  for (let i=n-1;i>=0;i--) {
+    const d=new Date(base);
+    d.setUTCDate(base.getUTCDate()-i*7);
+    weeks.push(d.toISOString().substring(0,10));
+  }
+  return weeks;
+}
+function addMonths(ym,n) {
+  const[y,m]=ym.split('-').map(Number);
+  const d=new Date(y,m-1+n,1);
+  return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+// ── Pipedrive ─────────────────────────────────────────────────
+const BASE=`https://${ORG}.pipedrive.com/api/v1`;
+async function pipeGet(ep) {
+  const sep=ep.includes('?')?'&':'?';
+  const r=await fetch(`${BASE}${ep}${sep}api_token=${API_TOKEN}`);
+  if (!r.ok) throw new Error(`Pipedrive ${r.status} → ${ep}`);
+  return r.json();
+}
+async function fetchByFilter(filterId) {
+  const all=[]; let start=0;
+  while(true) {
+    const j=await pipeGet(`/deals?filter_id=${filterId}&status=all&limit=500&start=${start}`);
+    (j.data||[]).forEach(d=>all.push(d));
+    if (!j.additional_data?.pagination?.more_items_in_collection) break;
+    start+=500;
+  }
+  return all;
+}
+
+// ── Report ────────────────────────────────────────────────────
+app.get('/api/report', async (req,res) => {
+  if (!API_TOKEN) return res.status(500).json({ok:false,error:'PIPEDRIVE_TOKEN não configurado.'});
+  try {
+    const [dealsCriados,dealsGanhos,dealsPerdidos,regrasScore,pipelinesRaw,stagesRaw] = await Promise.all([
+      fetchByFilter(FILTER_CRIADOS),
+      fetchByFilter(FILTER_GANHOS),
+      fetchByFilter(FILTER_PERDIDOS),
+      carregarRegrasScore(),
+      pipeGet('/pipelines').catch(()=>({data:[]})),
+      pipeGet('/stages').catch(()=>({data:[]})),
+    ]);
+    const pipelineMap = Object.fromEntries((pipelinesRaw.data||[]).map(p=>[String(p.id), p.name]));
+    // stageMap: id → {name, order_nr, pipeline_id}
+    const stageMap = Object.fromEntries((stagesRaw.data||[]).map(s=>[String(s.id),{name:s.name,order:s.order_nr||0,pipeId:String(s.pipeline_id)}]));
+
+    const now=new Date();
+    const paramMes=req.query.mes;
+    const curYM=paramMes&&/^\d{4}-\d{2}$/.test(paramMes)?paramMes:now.toISOString().substring(0,7);
+    const prevYM=addMonths(curYM,-1);
+    const prev2YM=addMonths(curYM,-2);
+    const weeks=getWeeks(8);
+    const wSet=new Set(weeks);
+    const year=parseInt(curYM.split('-')[0]);
+    const month=parseInt(curYM.split('-')[1]);
+    const daysInMonth=new Date(year,month,0).getDate();
+    const allDays=Array.from({length:daysInMonth},(_,i)=>`${curYM}-${String(i+1).padStart(2,'0')}`);
+
+    const empty = () => ({
+      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{}}, sem:{} },
+      ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
+      camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
+      perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
+        analitica:{
+          'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
+          'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
         }
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:26,right:8}},
-      plugins:{
-        legend:{
-          display:true,position:'bottom',
-          labels:{font:{size:9},padding:10,boxWidth:9,
-            filter:i=>i.text==='Receita'  // mostra só Receita na legenda
-          }
-        },
-        datalabels:{},
-        tooltip:{
-          mode:'index',intersect:false,
-          callbacks:{
-            label:c=>{
-              if(c.dataset.type==='bar') return ` ${fmtN(c.parsed.y)} vendas`;
-              return ` ${brlK(c.parsed.y)}`;
-            }
-          }
-        },
-        delta:{show:false}, // sem delta nos ganhos
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:opts.maxTicks||20},border:{color:'transparent'}},
-        yBar:{type:'linear',position:'left',grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true},
-        yLine:{type:'linear',position:'right',grid:{display:false},ticks:{font:{size:9},maxTicksLimit:4,callback:v=>brlK(v)},border:{color:'transparent'},beginAtZero:true},
-      }
-    }
-  });
-}
-
-/* ── Stacked bar ── */
-function mkStackedBar(id,labels,datasets){
-  dk(id);
-  const ctx=document.getElementById(id);if(!ctx)return;
-  const totals=labels.map((_,i)=>datasets.reduce((s,d)=>s+(d.data[i]||0),0));
-  charts[id]=new Chart(ctx,{type:'bar',
-    data:{labels,datasets},
-    options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:22}},
-      plugins:{
-        legend:{display:true,position:'bottom',labels:{font:{size:9},padding:10,boxWidth:9}},
-        datalabels:{
-          display:c=>c.datasetIndex===datasets.length-1&&totals[c.dataIndex]>0,
-          formatter:(_,c)=>fmtN(totals[c.dataIndex]),
-          color:'#1c2b3a',font:{family:'DM Sans',size:9,weight:'700'},anchor:'end',align:'top',offset:2,
-        },
-        tooltip:{mode:'index',intersect:false},
-      },
-      scales:{
-        x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxTicksLimit:20},border:{color:'transparent'}},
-        y:{stacked:true,grid:{color:GC},ticks:{font:{size:9},maxTicksLimit:4},border:{color:'transparent'},beginAtZero:true}
-      }}});
-}
-
-/* ── Score line (com banda ICP e tooltip com volume) ── */
-function mkScoreLine(id,items,col,snapItems){
-  dk(id);
-  const ctx=document.getElementById(id);if(!ctx)return;
-  const labels=(items||[]).map(x=>x.label);
-  const values=(items||[]).map(x=>x.pct||0);
-  const volumes=(items||[]).map(x=>x.v||0);
-
-  const bandPlugin={
-    id:'scoreBand',
-    beforeDraw(chart){
-      const{ctx:c,chartArea,scales}=chart;
-      if(!chartArea||!scales?.x)return;
-      try{
-        // ICP = De 6 a 6,9 (idx 4) até De 8 a 8,9 (idx 6)
-        const step=scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0);
-        const x0=scales.x.getPixelForValue(4)-step/2;
-        const x1=scales.x.getPixelForValue(6)+step/2;
-        c.save();
-        c.fillStyle='rgba(184,135,63,.18)';
-        c.fillRect(x0,chartArea.top,x1-x0,chartArea.bottom-chartArea.top);
-        // Linha vertical e label ICP
-        c.strokeStyle='rgba(184,135,63,.45)';
-        c.lineWidth=1;
-        c.setLineDash([4,3]);
-        c.beginPath();c.moveTo(x0,chartArea.top);c.lineTo(x0,chartArea.bottom);c.stroke();
-        c.beginPath();c.moveTo(x1,chartArea.top);c.lineTo(x1,chartArea.bottom);c.stroke();
-        c.setLineDash([]);
-        c.fillStyle='rgba(184,135,63,.7)';
-        c.font='bold 9px DM Sans,sans-serif';
-        c.textAlign='center';
-        c.fillText('ICP',(x0+x1)/2,chartArea.top+12);
-        c.restore();
-      }catch(e){}
-    }
-  };
-
-  charts[id]=new Chart(ctx,{type:'line',
-    data:{labels,datasets:[
-      ...(snapItems&&snapItems.length?[{
-        data:snapItems.map(x=>x.pct||0),
-        borderColor:'#bbbbbb',backgroundColor:'transparent',
-        borderWidth:1.5,borderDash:[4,3],fill:false,tension:.28,
-        pointRadius:2,pointBackgroundColor:'#bbbbbb',
-        datalabels:{display:false},
-      }]:[]),
-      {
-        data:values,borderColor:col,backgroundColor:col+'18',
-        borderWidth:2,fill:false,tension:.28,
-        pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
-      }
-    ]},
-    plugins:[bandPlugin],
-    options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:24,right:8,left:4}},
-      plugins:{
-        legend:{display:false},
-        datalabels:{
-          display:c=>c.dataset.data[c.dataIndex]>0,
-          formatter:v=>Number(v).toFixed(v%1?1:0)+'%',
-          color:'#1c2b3a',
-          backgroundColor:'rgba(255,255,255,.78)',
-          borderRadius:3,padding:{top:2,bottom:2,left:4,right:4},
-          font:{family:'DM Sans',size:9,weight:'700'},
-          anchor:'end',align:'top',offset:3,
-        },
-        tooltip:{callbacks:{
-          label:c=>{
-            const pct=Number(c.parsed.y).toFixed(1)+'%';
-            const vol=volumes[c.dataIndex]||0;
-            return` ${pct} · ${fmtN(vol)} leads`;
-          }
-        }},
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{font:{size:9}},border:{color:'transparent'}},
-        y:{grid:{color:GC},ticks:{font:{size:9},callback:v=>v+'%',maxTicksLimit:5},border:{color:'transparent'},beginAtZero:true,suggestedMax:40}
-      }}
-  });
-}
-
-/* ── Origem temporal ── */
-function otHtml(data,col){
-  if(!data||!data.length)return'<div style="color:var(--muted);font-size:.78rem">Sem dados.</div>';
-  const max=Math.max(...data.map(d=>d.v),1);
-  return data.map(d=>`
-    <div class="ot-row">
-      <div class="ot-label">${esc(d.label)}</div>
-      <div class="ot-track"><div class="ot-fill" style="width:${Math.round(d.v/max*100)}%;background:${col}"></div></div>
-      <div class="ot-val">${fmtN(d.v)}</div>
-      <div class="ot-pct">${d.pct}%</div>
-    </div>`).join('');
-}
-
-/* ── Sub-tabela de deals (expansível) ── */
-function dealsSubTable(deals){
-  if(!deals||!deals.length)return'<div style="padding:10px 14px;font-size:.76rem;color:var(--muted)">Nenhuma venda detalhada.</div>';
-  return`<table style="width:100%;font-size:.76rem">
-    <thead style="background:#2d4459">
-      <tr>
-        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Campanha</th>
-        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Proprietário</th>
-        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Produto</th>
-        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Data Ganho</th>
-        <th style="padding:7px 14px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Valor</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${[...deals].sort((a,b)=>b.valor-a.valor).map(d=>`
-        <tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:7px 14px;font-size:.76rem;color:var(--muted)">${esc((d.campanha||'').length>40?(d.campanha||'').slice(0,38)+'…':d.campanha||'—')}</td>
-          <td style="padding:7px 14px;font-size:.76rem;font-weight:500;color:var(--navy)">${esc(d.proprietario||'—')}</td>
-          <td style="padding:7px 14px;font-size:.76rem;color:var(--text)">${esc((d.produto||'').length>32?(d.produto||'').slice(0,30)+'…':d.produto||'—')}</td>
-          <td style="padding:7px 14px;font-size:.76rem;text-align:right;color:var(--muted)">${d.dataGanho||'—'}</td>
-          <td style="padding:7px 14px;font-size:.76rem;font-weight:700;text-align:right;color:var(--navy)">${brl(d.valor||0)}</td>
-        </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-
-/* ── Tabela expansível genérica ── */
-function expandTable(rows,prefix){
-  if(!rows||!rows.length)return'<div style="padding:10px;font-size:.8rem;color:var(--muted)">Nenhum dado.</div>';
-  return`<table>
-    <thead><tr><th style="width:24px"></th><th>Origem</th><th>Vendas</th><th>Receita</th><th>Ticket</th></tr></thead>
-    <tbody>
-      ${rows.map((o,i)=>`
-        <tr class="ori-row" onclick="toggleDeals('${prefix}-${i}')" style="cursor:pointer">
-          <td style="text-align:center;color:var(--muted);font-size:.8rem" id="${prefix}-arr-${i}">▶</td>
-          <td class="td-name">${esc(o.nome)}</td>
-          <td>${fmtN(o.t)}</td>
-          <td>${brl(o.rev||0)}</td>
-          <td>${o.ticket>0?brl(o.ticket):'—'}</td>
-        </tr>
-        <tr id="${prefix}-${i}" style="display:none">
-          <td colspan="5" style="padding:0;background:var(--bg)">${dealsSubTable(o.deals)}</td>
-        </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-
-/* ── Tabela campanha (deals direto, expansível como item único) ── */
-function campTable(deals,prefix){
-  if(!deals||!deals.length)return'<div style="padding:10px;font-size:.8rem;color:var(--muted)">Nenhuma venda da campanha no período.</div>';
-  const total=deals.reduce((s,d)=>s+(d.valor||0),0);
-  return`<table>
-    <thead><tr><th style="width:24px"></th><th>Campanha</th><th>Receita</th></tr></thead>
-    <tbody>
-      <tr class="ori-row" onclick="toggleDeals('${prefix}-0')" style="cursor:pointer">
-        <td style="text-align:center;color:var(--muted);font-size:.8rem" id="${prefix}-arr-0">▶</td>
-        <td class="td-name">Vendas da campanha</td>
-        <td>${brl(total)}</td>
-      </tr>
-      <tr id="${prefix}-0" style="display:none">
-        <td colspan="3" style="padding:0;background:var(--bg)">${dealsSubTable(deals)}</td>
-      </tr>
-    </tbody>
-    <tfoot><tr><td></td><td>Total · ${fmtN(deals.length)} vendas</td><td>${brl(total)}</td></tr></tfoot>
-  </table>`;
-}
-
-/* ── Render ── */
-function render(){
-  if(!DATA)return;
-  const d=DATA[PROD];
-  const col=color(PROD),col2=color2(PROD);
-  const lbl=PROD==='lean'?'Lean Governance':'CES';
-  const mes=fmtM(DATA.mes);
-  const ts=new Date(DATA.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  const badgeClass=PROD==='lean'?'badge-lean':'badge-ces';
-  const divClass=PROD==='lean'?'div-lean':'div-ces';
-
-  document.getElementById('tbMeta').textContent=`${mes} · ${ts}`;
-  document.getElementById('togLean').className=`ptog${PROD==='lean'?' lean':''}`;
-  document.getElementById('togCes').className =`ptog${PROD==='ces'?' ces':''}`;
-
-  const{criados,ganhos,perdidos}=d;
-  const dLabels=criados.porDia.map(x=>fmtD(x.d));
-  const wLabels=criados.porSemana.map(x=>fmtW(x.w));
-
-  /* ── Tabela produtos criados ── */
-  const tblProd=criados.produtosVendidos?.length?`
-    <div class="sec-lbl2">Produtos vendidos · leads criados este mês<span></span></div>
-    <div class="twrap" style="margin-bottom:16px">
-      ${expandTable(criados.produtosVendidos,'pv')}
-    </div>`:'' ;
-
-  document.getElementById('content').innerHTML=`
-
-    <div class="ph-row">
-      <div>
-        <div class="ph-badge ${badgeClass}">${lbl}</div>
-        <div class="ph-ttl">${lbl} · ${mes}</div>
-        <div class="ph-sub">Leads e perdas por campanha · Ganhos por produto e campanha de origem</div>
-      </div>
-    </div>
-
-    <!-- ══ LEADS CRIADOS ═══════════════════════════ -->
-    <div class="sec-block">
-      <div class="sec-eyebrow">Eixo temporal · Data de Criação</div>
-      <div class="sec-title">Leads Criados <span class="sec-date-tag tag-criado">Mês atual · ${mes}</span></div>
-      <div class="sec-divider ${divClass}"></div>
-    </div>
-
-    <div class="charts-2">
-      <div class="ccard">
-        <div class="ccard-ttl">Volume dia a dia · por status</div>
-        <div class="cwrap md"><canvas id="ch-cri-dia"></canvas></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-ttl">Volume por semana · últimas 8 semanas completas (Qui→Qua)</div>
-        <div class="cwrap md"><canvas id="ch-cri-sem"></canvas></div>
-      </div>
-    </div>
-
-    <div class="charts-1">
-      <div class="ccard">
-        <div class="ccard-ttl">% por faixa de score · criados no mês · zona dourada = ICP</div>
-        <div class="cwrap md"><canvas id="ch-cri-score"></canvas></div>
-      </div>
-    </div>
-
-    <div class="kpi-row kpi5">
-      <div class="kpi"><div class="kpi-accent" style="background:${col}"></div>
-        <div class="lbl">Total criado no mês</div><div class="val">${fmtN(criados.total)}</div><div class="sub">${criados.mediaDia} por dia</div>
-        ${SNAP&&SNAP.data?deltaHtml(criados.total,SNAP.data[PROD]?.criados?.total):''}</div>
-      <div class="kpi"><div class="kpi-accent" style="background:var(--navy)"></div>
-        <div class="lbl">Em Aberto</div><div class="val" style="color:var(--navy)">${fmtN(criados.status.a)}</div><div class="sub">${criados.total>0?((criados.status.a/criados.total)*100).toFixed(0):'0'}% do total</div></div>
-      <div class="kpi"><div class="kpi-accent" style="background:var(--sage)"></div>
-        <div class="lbl">Ganhos dos criados</div><div class="val" style="color:var(--sage)">${fmtN(criados.status.g)}</div><div class="sub">leads criados este mês</div></div>
-      <div class="kpi"><div class="kpi-accent" style="background:var(--rust)"></div>
-        <div class="lbl">Perdidos dos criados</div><div class="val" style="color:var(--rust)">${fmtN(criados.status.p)}</div><div class="sub">leads criados este mês</div></div>
-      <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div>
-        <div class="lbl">Taxa de Conversão</div><div class="val" style="color:${col}">${criados.taxaConv}%</div><div class="sub">ganhos ÷ criados</div></div>
-    </div>
-    ${tblProd}
-
-    <!-- ══ NEGÓCIOS GANHOS ════════════════════════ -->
-    <div class="sec-block">
-      <div class="sec-eyebrow">Eixo temporal · Data de Ganho</div>
-      <div class="sec-title">Negócios Ganhos <span class="sec-date-tag tag-ganho">Data de Ganho · ${mes}</span></div>
-      <div class="sec-divider div-ganho"></div>
-    </div>
-
-    <div class="gtog-row">
-      <button class="gtog active" id="gtog-prod" onclick="switchGanhos('prod')">Por Produto vendido</button>
-      <button class="gtog"        id="gtog-camp" onclick="switchGanhos('camp')">Por Campanha de origem</button>
-    </div>
-
-    <!-- Visão produto -->
-    <div id="view-prod">
-      <div class="kpi-row kpi3">
-        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Vendas (produto)</div><div class="val">${fmtN(ganhos.porProduto.total)}</div><div class="sub">negócios ganhos</div>
-          ${SNAP&&SNAP.data?deltaHtml(ganhos.porProduto.total,SNAP.data[PROD]?.ganhos?.porProduto?.total):''}</div>
-        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porProduto.receita)}</div><div class="sub">${brl(ganhos.porProduto.receita)}</div>
-          ${SNAP&&SNAP.data?deltaHtml(ganhos.porProduto.receita,SNAP.data[PROD]?.ganhos?.porProduto?.receita):''}</div>
-        <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div><div class="lbl">Ticket Médio</div><div class="val" style="color:${col}">${ganhos.porProduto.ticket>0?brlK(ganhos.porProduto.ticket):'—'}</div><div class="sub">por fechamento</div></div>
-      </div>
-      <div class="charts-2">
-        <div class="ccard"><div class="ccard-ttl">Vendas por dia · produto vendido</div><div class="cwrap"><canvas id="ch-gp-dia"></canvas></div></div>
-        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-gp-sem"></canvas></div></div>
-      </div>
-      <!-- Campanha de origem + Quando foi criado: LADO A LADO -->
-      <div class="side-row">
-        <div>
-          <div class="sec-lbl2">Campanha de origem das vendas<span></span></div>
-          <div class="twrap">${expandTable(ganhos.porProduto.origens||[],'gpo')}</div>
-        </div>
-        <div class="ot-card">
-          <div class="ot-title">Quando foi criado o lead que virou venda · por produto</div>
-          <div class="ot-rows">${otHtml(ganhos.porProduto.origemTemporal,col)}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Visão campanha -->
-    <div id="view-camp" style="display:none">
-      <div class="kpi-row kpi3">
-        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Vendas (campanha)</div><div class="val">${fmtN(ganhos.porCampanha.total)}</div><div class="sub">negócios ganhos</div></div>
-        <div class="kpi"><div class="kpi-accent" style="background:${col}"></div><div class="lbl">Receita</div><div class="val">${brlK(ganhos.porCampanha.receita)}</div><div class="sub">${brl(ganhos.porCampanha.receita)}</div></div>
-        <div class="kpi"><div class="kpi-accent" style="background:${col2}"></div><div class="lbl">Ticket Médio</div><div class="val" style="color:${col}">${ganhos.porCampanha.ticket>0?brlK(ganhos.porCampanha.ticket):'—'}</div><div class="sub">por fechamento</div></div>
-      </div>
-      <!-- Produtos vendidos pela campanha -->
-      ${ganhos.porCampanha.produtos?.length ? `
-        <div class="sec-lbl2" style="margin-bottom:10px">Produtos vendidos pela campanha · nome real<span></span></div>
-        <div class="twrap" style="margin-bottom:16px">
-          <table>
-            <thead><tr><th>Produto</th><th>Vendas</th><th>Receita</th><th>Ticket Médio</th></tr></thead>
-            <tbody>${ganhos.porCampanha.produtos.map(p=>`
-              <tr><td class="td-name">${esc(p.nome)}</td><td>${fmtN(p.t)}</td><td>${brl(p.rev)}</td><td>${brl(p.ticket)}</td></tr>
-            `).join('')}</tbody>
-            <tfoot><tr>
-              <td>Total</td>
-              <td>${fmtN(ganhos.porCampanha.produtos.reduce((a,p)=>a+p.t,0))}</td>
-              <td>${brl(ganhos.porCampanha.produtos.reduce((a,p)=>a+p.rev,0))}</td>
-              <td>—</td>
-            </tr></tfoot>
-          </table>
-        </div>` : ''}
-
-      <div class="charts-2">
-        <div class="ccard"><div class="ccard-ttl">Vendas por dia · campanha de origem</div><div class="cwrap"><canvas id="ch-gc-dia"></canvas></div></div>
-        <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-gc-sem"></canvas></div></div>
-      </div>
-      <!-- Tabela de vendas + Quando foi criado: LADO A LADO -->
-      <div class="side-row">
-        <div>
-          <div class="sec-lbl2">Vendas da campanha · detalhamento<span></span></div>
-          <div class="twrap">${campTable(ganhos.porCampanha.deals||[],'gcd')}</div>
-        </div>
-        <div class="ot-card">
-          <div class="ot-title">Quando foi criado o lead que virou venda · por campanha</div>
-          <div class="ot-rows">${otHtml(ganhos.porCampanha.origemTemporal,col)}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ NEGÓCIOS PERDIDOS ══════════════════════ -->
-    <div class="sec-block">
-      <div class="sec-eyebrow">Eixo temporal · Data de Perda</div>
-      <div class="sec-title">Negócios Perdidos <span class="sec-date-tag tag-perda">Data de Perda · ${mes}</span></div>
-      <div class="sec-divider div-perda"></div>
-    </div>
-
-    <div class="kpi-row kpi1">
-      <div class="kpi"><div class="kpi-accent" style="background:var(--rust)"></div>
-        <div class="lbl">Total Perdidos no Mês</div><div class="val" style="color:var(--rust)">${fmtN(perdidos.total)}</div><div class="sub">${perdidos.mediaDia} por dia</div></div>
-    </div>
-
-    <div class="charts-2">
-      <div class="ccard"><div class="ccard-ttl">Perdidos por dia · mês atual</div><div class="cwrap"><canvas id="ch-perd-dia"></canvas></div></div>
-      <div class="ccard"><div class="ccard-ttl">Perdidos por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-perd-sem"></canvas></div></div>
-    </div>
-
-    <div class="charts-1">
-      <div class="ccard">
-        <div class="ccard-ttl">% por faixa de score · leads perdidos no mês · zona dourada = ICP</div>
-        <div class="cwrap md"><canvas id="ch-perd-score"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Motivos por time: 3 colunas -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px" id="motivos-times-wrap">
-      <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Geral</div>
-        <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Time Diarley</div>
-        <div class="motivos" id="motivos-diarley" style="margin-top:4px"></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Time Denise</div>
-        <div class="motivos" id="motivos-denise" style="margin-top:4px"></div>
-      </div>
-    </div>
-
-    <div class="pfooter">
-      <span>Board Academy · CES &amp; LEAN · Inteligência Comercial</span>
-      <span>Atualizado em ${new Date(DATA.updatedAt).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</span>
-    </div>
-  `;
-
-  /* Motivos — helper */
-  const snapMotivos=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
-  function renderMotivos(elId, items){
-    const el=document.getElementById(elId); if(!el)return;
-    el.innerHTML=items&&items.length
-      ?items.map(m=>{
-          const snapM=snapMotivos.find(s=>s.m===m.m);
-          const snapPct=snapM?snapM.pct:null;
-          return`<div class="motivo-row">
-            <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
-            <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
-            <div class="motivo-pct">${m.pct}%</div>
-            <div class="motivo-count">${m.c}</div>
-            ${SNAP&&SNAP.data?ppDelta(m.pct,snapPct):''}
-          </div>`;}).join('')
-      :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados.</div>';
-  }
-  renderMotivos('motivos-list',    perdidos.topMotivos);
-  renderMotivos('motivos-diarley', perdidos.motivosTimes?.['Time Diarley']?.top||[]);
-  renderMotivos('motivos-denise',  perdidos.motivosTimes?.['Time Denise']?.top||[]);
-
-  /* Charts */
-  mkStackedBar('ch-cri-dia',dLabels,[
-    {label:'Aberto',  data:criados.porDia.map(x=>x.a),backgroundColor:'#1c2b3a55',borderWidth:0,borderRadius:2},
-    {label:'Ganho',   data:criados.porDia.map(x=>x.g),backgroundColor:'#4a7c6a55',borderWidth:0,borderRadius:2},
-    {label:'Perdido', data:criados.porDia.map(x=>x.p),backgroundColor:'#c0533a55',borderWidth:0,borderRadius:2},
-  ]);
-  mkBar('ch-cri-sem', wLabels,criados.porSemana.map(x=>x.v),col,{weekly:true});
-  const snapScore=SNAP&&SNAP.data?SNAP.data[PROD]?.criados?.scoreFaixas||[]:[];
-  mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col,snapScore.length?snapScore:null);
-  mkBarLine('ch-gp-dia', dLabels,ganhos.porProduto.porDia.map(x=>x.v),    ganhos.porProduto.porDia.map(x=>x.r),    col,{maxTicks:20});
-  mkBarLine('ch-gp-sem', wLabels,ganhos.porProduto.porSemana.map(x=>x.v), ganhos.porProduto.porSemana.map(x=>x.r), col,{weekly:false});
-  mkBarLine('ch-gc-dia', dLabels,ganhos.porCampanha.porDia.map(x=>x.v),    ganhos.porCampanha.porDia.map(x=>x.r),    col,{maxTicks:20});
-  mkBarLine('ch-gc-sem', wLabels,ganhos.porCampanha.porSemana.map(x=>x.v), ganhos.porCampanha.porSemana.map(x=>x.r), col,{weekly:false});
-  mkBar('ch-perd-dia',dLabels,perdidos.porDia.map(x=>x.v),'#c0533a',{maxTicks:20});
-  mkBar('ch-perd-sem',wLabels,perdidos.porSemana.map(x=>x.v),'#c0533a',{weekly:true});
-  const snapScorePerd=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.scoreFaixas||[]:[];
-  mkScoreLine('ch-perd-score',perdidos.scoreFaixas||[],'#c0533a',snapScorePerd.length?snapScorePerd:null);
-}
-
-function setProduct(p){PROD=p;if(DATA){render();renderAnalitica();}}
-
-/* ── Tabs ── */
-let TAB = 'main';
-function setTab(t){
-  TAB=t;
-  document.getElementById('pageMain').style.display      = t==='main'      ?'block':'none';
-  document.getElementById('pageAnalitica').style.display = t==='analitica' ?'block':'none';
-  document.getElementById('tabMain').style.background      = t==='main'      ?'rgba(255,255,255,.15)':'';
-  document.getElementById('tabMain').style.color            = t==='main'      ?'#fff':'';
-  document.getElementById('tabAnalitica').style.background  = t==='analitica' ?'rgba(255,255,255,.15)':'';
-  document.getElementById('tabAnalitica').style.color       = t==='analitica' ?'#fff':'';
-  if(t==='analitica'&&DATA) renderAnalitica();
-}
-
-/* ── Analítica ── */
-let MOTIVO_AN = 'Sem perfil';
-
-function renderAnalitica(){
-  if(!DATA) return;
-  const pd = DATA[PROD];
-  if(!pd){ document.getElementById('contentAnalitica').innerHTML='<div class="state-wrap"><span>Sem dados.</span></div>'; return; }
-
-  const col  = PROD==='lean'?'#4a6fa5':'#0e7490';
-  const lbl  = PROD==='lean'?'Lean Governance':'CES';
-  const mes  = fmtM(DATA.mes);
-  const an   = pd.perdidos?.analitica;
-  const totPerdidos = pd.perdidos?.total||0;
-
-  const dados = an?.[MOTIVO_AN];
-  const totalMotivo = dados
-    ? Object.values(dados).reduce((s,tipoData)=>s+((tipoData?.itens||[]).reduce((ss,x)=>ss+x.v,0)/4),0)
-    : 0;
-  // Conta real do motivo
-  const countMotivo = pd.perdidos?.topMotivos?.find(m=>m.m===MOTIVO_AN)?.c || 0;
-
-  let anCardCount = 0;
-  function anCard(titulo, tipoData, col2){
-    const items = tipoData?.itens || [];
-    if(!items.length) return `<div class="an-card"><div class="an-card-title">${titulo}</div><div style="color:var(--muted);font-size:.8rem;padding:8px 0">Sem dados</div></div>`;
-    const maxV = Math.max(...items.map(x=>x.v),1);
-    const rows = items.map(x=>{
-      const id      = 'an-'+(anCardCount++);
-      const hasRaw  = x.rawItems && x.rawItems.length > 0;
-      const detailHtml = hasRaw ? `
-        <div class="an-detail" id="${id}">
-          <table class="an-detail-table">
-            ${x.rawItems.map(r=>`<tr><td>${esc(r.raw||'—')}</td><td>${r.v}</td></tr>`).join('')}
-          </table>
-        </div>` : '';
-      return `<div class="an-item-wrap">
-        <div class="an-row" onclick="${hasRaw?`toggleOutros('${id}')`:''}" style="${hasRaw?'':'cursor:default'}">
-          <span class="an-row-toggle">${hasRaw?`<span id="${id}-arr">▶</span>`:''}</span>
-          <div class="an-lbl" title="${esc(x.leg)}">${esc(x.leg)}</div>
-          <div class="an-track"><div class="an-fill" style="width:${Math.round(x.v/maxV*100)}%;background:${col2}"></div></div>
-          <div class="an-val">${fmtN(x.v)}</div>
-          <div class="an-pct">${x.pct}%</div>
-        </div>
-        ${detailHtml}
-      </div>`;
-    }).join('');
-    return `<div class="an-card"><div class="an-card-title">${titulo}</div><div class="an-rows">${rows}</div></div>`;
-  }
-
-  anCardCount = 0;
-  document.getElementById('contentAnalitica').innerHTML = `
-    <div class="ph-row">
-      <div>
-        <div class="ph-eye">Board Academy · Analítica</div>
-        <div class="ph-ttl">${lbl} · ${mes}</div>
-        <div class="ph-sub">Perfil dos leads perdidos por dimensão de score</div>
-      </div>
-    </div>
-
-
-    <!-- Funis -->
-    <div class="sec-block" style="margin-top:0;margin-bottom:14px">
-      <div class="sec-eyebrow">Leads Criados · Data de Criação</div>
-      <div class="sec-title">Distribuição por Funil</div>
-      <div class="sec-divider ${PROD==='lean'?'div-lean':'div-ces'}"></div>
-    </div>
-
-    <div class="funis-wrap">
-      <div class="funis-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Funil</th><th>Leads</th><th>%</th>
-              ${(pd.criados.scoreFaixas||[]).map(f=>`<th style="font-size:.55rem;padding:7px 5px">${esc(f.label)}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${buildFunisRows(pd.criados.funis||[], 'fn', pd.criados.scoreFaixas)}
-          </tbody>
-          <tfoot><tr>
-            <td>Total</td><td>${fmtN(pd.criados.total)}</td><td>100%</td>
-            ${(pd.criados.scoreFaixas||[]).map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
-          </tr></tfoot>
-        </table>
-      </div>
-      <div class="funis-chart-wrap">
-        <div class="funis-chart-ttl">% de leads por funil</div>
-        <div class="funis-chart-canvas"><canvas id="ch-funis-rosca"></canvas></div>
-      </div>
-    </div>
-
-
-    <!-- Etapas -->
-    <div class="sec-block" style="margin-bottom:14px">
-      <div class="sec-eyebrow">Leads Abertos · Etapa atual no funil</div>
-      <div class="sec-title">Distribuição por Etapa</div>
-      <div class="sec-divider ${PROD==='lean'?'div-lean':'div-ces'}"></div>
-    </div>
-    <div class="funis-table-wrap" style="margin-bottom:24px">
-      ${buildEtapasTable(pd.criados.funis||[], pd.criados.etapas||{}, 'et')}
-    </div>
-
-    
-
-    <div class="sec-block" style="margin-bottom:14px">
-      <div class="sec-eyebrow">Perdidos no mês · Data de Perda</div>
-      <div class="sec-title">Perfil por Motivo de Perda
-        <span class="sec-date-tag tag-perda">${fmtN(totPerdidos)} perdidos no total</span>
-        <span class="sec-date-tag" style="background:#f5e9d6;color:#8c6428">${fmtN(countMotivo)} com "${MOTIVO_AN}"</span>
-      </div>
-      <div class="sec-divider div-perda"></div>
-    </div>
-
-    <div class="motivo-tog">
-      <button class="mtog ${MOTIVO_AN==='Sem perfil'?'active':''}"    onclick="setMotivoAn('Sem perfil')">Sem Perfil</button>
-      <button class="mtog ${MOTIVO_AN==='Sem interesse'?'active':''}" onclick="setMotivoAn('Sem interesse')">Sem Interesse</button>
-    </div>
-
-    <div class="an-grid">
-      ${anCard('Renda',        dados?.renda,        col)}
-      ${anCard('Cargo',        dados?.cargo,        col)}
-      ${anCard('Idade',        dados?.idade,        col)}
-      ${anCard('Escolaridade', dados?.escolaridade, col)}
-    </div>
-
-    <!-- Perdidos na Negociação -->
-    <div class="sec-block" style="margin-bottom:14px">
-      <div class="sec-eyebrow">Eixo temporal · Data de Perda · Etapa: Negociação</div>
-      <div class="sec-title">Perdidos na Negociação
-        <span class="sec-date-tag tag-perda">${fmtN(pd.perdidos?.negociacao?.length||0)} deals</span>
-      </div>
-      <div class="sec-divider div-perda"></div>
-    </div>
-
-    ${(()=>{
-      const neg = pd.perdidos?.negociacao||[];
-      if(!neg.length) return '<div style="color:var(--muted);font-size:.82rem;padding:12px 0">Nenhum lead perdido na etapa de Negociação no período.</div>';
-      // Agrupa por motivo
-      const grupos = {};
-      neg.forEach(d=>{ if(!grupos[d.motivo]) grupos[d.motivo]=[]; grupos[d.motivo].push(d); });
-      const colLink = PROD==='lean'?'var(--lean)':'var(--ces)';
-      let negIdx=0;
-      return `<div class="funis-table-wrap" style="margin-bottom:24px">
-        <table>
-          <thead><tr>
-            <th style="width:24px"></th>
-            <th style="text-align:left">Motivo de Perda</th>
-            <th>Qtd</th>
-          </tr></thead>
-          <tbody>
-            ${Object.entries(grupos).sort((a,b)=>b[1].length-a[1].length).map(([motivo,deals])=>{
-              const gid='neg-g-'+(negIdx++);
-              return `
-                <tr class="ori-row" onclick="toggleDeals('${gid}')" style="cursor:pointer">
-                  <td style="text-align:center"><span id="${gid}-arr">▶</span></td>
-                  <td class="td-name">${esc(motivo)}</td>
-                  <td>${deals.length}</td>
-                </tr>
-                <tr id="${gid}" class="outros-hidden">
-                  <td colspan="3" style="padding:0;background:var(--bg)">
-                    <table style="width:100%;font-size:.76rem">
-                      <thead style="background:#2d4459"><tr>
-                        <th style="padding:6px 12px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">ID</th>
-                        <th style="padding:6px 12px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Título</th>
-                        <th style="padding:6px 12px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:left">Owner</th>
-                        <th style="padding:6px 12px;color:rgba(255,255,255,.7);font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-align:right">Data Perda</th>
-                      </tr></thead>
-                      <tbody>
-                        ${deals.map(d=>`<tr style="border-bottom:1px solid var(--border)">
-                          <td style="padding:6px 12px"><a href="https://boardacademy.pipedrive.com/deal/${d.id}" target="_blank" style="color:${colLink};font-weight:600;text-decoration:none">#${d.id}</a></td>
-                          <td style="padding:6px 12px">${esc(d.title)}</td>
-                          <td style="padding:6px 12px;color:var(--muted)">${esc(d.owner)}</td>
-                          <td style="padding:6px 12px;text-align:right;color:var(--muted)">${d.dataPerda}</td>
-                        </tr>`).join('')}
-                      </tbody>
-                    </table>
-                  </td>
-                </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>`;
-    })()}
-
-  `;
-  setTimeout(()=>renderFunisChart(pd?.criados?.funis||[],col),50);
-}
-
-
-/* Consolida funis < 10 em Outros expansível */
-function buildFunisRows(funis, prefix, scoreFaixas){
-  const MIN = 10;
-  const grandes = funis.filter(f=>f.t >= MIN);
-  const pequenos = funis.filter(f=>f.t < MIN);
-  let rows = grandes.map(f=>`
-    <tr>
-      <td class="td-name">${esc(f.nome)}</td>
-      <td>${fmtN(f.t)}</td>
-      <td>${f.pct}%</td>
-      ${(f.scoreFaixas||[]).map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
-    </tr>`).join('');
-
-  if(pequenos.length){
-    const totPeq = pequenos.reduce((s,f)=>s+f.t,0);
-    const totGeral = funis.reduce((s,f)=>s+f.t,0);
-    const pctPeq = totGeral>0?Math.round(totPeq/totGeral*100):0;
-    // Agrega scoreFaixas dos pequenos
-    const aggScore = scoreFaixas ? scoreFaixas.map((_,i)=>({v:pequenos.reduce((s,f)=>s+(f.scoreFaixas?.[i]?.v||0),0)})) : [];
-    const detalhes = pequenos.map(f=>`
-      <tr style="background:var(--bg)">
-        <td style="padding-left:28px;font-size:.76rem;color:var(--muted)">${esc(f.nome)}</td>
-        <td style="font-size:.76rem">${fmtN(f.t)}</td>
-        <td style="font-size:.76rem">${f.pct}%</td>
-        ${(f.scoreFaixas||[]).map(s=>`<td style="font-size:.72rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
-      </tr>`).join('');
-
-    rows += `
-    <tr class="ori-row" onclick="toggleDeals('${prefix}-outros')" style="cursor:pointer">
-      <td class="td-name"><span id="${prefix}-outros-arr">▶</span> Outros (${pequenos.length} funis)</td>
-      <td>${fmtN(totPeq)}</td>
-      <td>${pctPeq}%</td>
-      ${aggScore.map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
-    </tr>
-    <tr id="${prefix}-outros" class="outros-hidden">
-      <td colspan="${3+(scoreFaixas?.length||0)}" style="padding:0">${detalhes}</td>
-    </tr>`;
-  }
-  return rows;
-}
-
-function buildEtapasTable(funis, etapas, prefix){
-  const MIN = 10;
-  const grandes = funis.filter(f=>f.t >= MIN);
-  const pequenos = funis.filter(f=>f.t < MIN);
-
-  // Coleta todas as etapas únicas em ordem
-  const etapasSet = new Map();
-  grandes.forEach(f=>{
-    (etapas[f.nome]||[]).forEach(e=>{
-      if(!etapasSet.has(e.nome)) etapasSet.set(e.nome,{order:etapasSet.size});
+      }, sem:{} },
     });
-  });
-  const etapasCols = [...etapasSet.keys()];
+    const D={LEAN:empty(),CES:empty()};
 
-  if(!etapasCols.length) return '<div style="color:var(--muted);font-size:.8rem;padding:14px">Sem leads abertos no período.</div>';
+    // ── CRIADOS ───────────────────────────────────────────────
+    for (const deal of dealsCriados) {
+      const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
+      if (!camp||!deal.add_time) continue;
+      const _ym=toYM(deal.add_time),_w=weekStart(deal.add_time);
+      const dc=D[camp].criados;
+      if (_ym===curYM) {
+        const _d=toYMD(deal.add_time);
+        dc.mes.t++;
+        dc.mes.dia[_d]=(dc.mes.dia[_d]||0)+1;
+        if (deal.status==='open')  {dc.mes.st.a++;dc.mes.diaA[_d]=(dc.mes.diaA[_d]||0)+1;}
+        if (deal.status==='won')   {dc.mes.st.g++;dc.mes.diaG[_d]=(dc.mes.diaG[_d]||0)+1;}
+        if (deal.status==='lost')  {dc.mes.st.p++;dc.mes.diaP[_d]=(dc.mes.diaP[_d]||0)+1;}
+        // Score
+        const score=calcularScore(deal,regrasScore);
+        const faixa=faixaScore(score);
+        if (faixa) dc.mes.scoreFaixas[faixa]=(dc.mes.scoreFaixas[faixa]||0)+1;
+        // Funil — agrupa por time
+        const pipeId=String(deal.pipeline_id||'');
+        const timeName=classifyTime(deal.pipeline_id);
+        if (!dc.mes.funis[timeName]) dc.mes.funis[timeName]={t:0,scoreFaixas:emptyFaixas()};
+        dc.mes.funis[timeName].t++;
+        if (faixa) dc.mes.funis[timeName].scoreFaixas[faixa]=(dc.mes.funis[timeName].scoreFaixas[faixa]||0)+1;
+        // Etapas (só abertos) — agrupa por time
+        if (deal.status==='open') {
+          const stageId=String(deal.stage_id||'');
+          const stageInfo=stageMap[stageId]||{name:stageId||'Desconhecida',order:999,pipeId:pipeId};
+          if (!dc.mes.etapas[timeName]) dc.mes.etapas[timeName]={};
+          const stageKey=stageInfo.name;
+          if (!dc.mes.etapas[timeName][stageKey]) dc.mes.etapas[timeName][stageKey]={t:0,order:stageInfo.order};
+          dc.mes.etapas[timeName][stageKey].t++;
+        }
+        // Produtos vendidos
+        const val=parseFloat(deal.value||0);
+        const prods=classifyProduct(deal[PRODUCT_FIELD]);
+        if (deal.status==='won'&&val>0&&prods.length) {
+          for (const p of prods) {
+            const nome=p==='LEAN'?'Lean Governance':'CES';
+            if (!dc.mes.produtosVendidos[nome]) dc.mes.produtosVendidos[nome]={t:0,rev:0,deals:[]};
+            dc.mes.produtosVendidos[nome].t++;dc.mes.produtosVendidos[nome].rev+=val;
+            dc.mes.produtosVendidos[nome].deals.push({
+              campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
+              dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
+              proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+              valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
+            });
+          }
+        }
+      }
+      if (wSet.has(_w)) dc.sem[_w]=(dc.sem[_w]||0)+1;
+    }
 
-  let rows = grandes.map(f=>{
-    const etapasFunil = Object.fromEntries((etapas[f.nome]||[]).map(e=>[e.nome,e.t]));
-    const totalAberto = Object.values(etapasFunil).reduce((s,v)=>s+v,0);
-    return `<tr>
-      <td class="td-name">${esc(f.nome)}</td>
-      <td>${fmtN(totalAberto)}</td>
-      ${etapasCols.map(e=>`<td style="font-size:.75rem;text-align:right">${etapasFunil[e]>0?fmtN(etapasFunil[e]):''}</td>`).join('')}
-    </tr>`;
-  }).join('');
+    // ── GANHOS ───────────────────────────────────────────────
+    for (const deal of dealsGanhos) {
+      if (deal.status!=='won'||!deal.won_time) continue;
+      const val=parseFloat(deal.value||0);
+      if (val<=0) continue;
+      const prods=classifyProduct(deal[PRODUCT_FIELD]);
+      const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
+      const origem=classifyOrigem(deal[CAMPAIGN_FIELD]);
+      const _ym=toYM(deal.won_time),_w=weekStart(deal.won_time),_d=toYMD(deal.won_time);
+      const addYM=toYM(deal.add_time);
+      let tempCat;
+      if (addYM===curYM) tempCat='cur';
+      else if (addYM===prevYM) tempCat='prev';
+      else if (addYM===prev2YM) tempCat='prev2';
+      else tempCat='antes';
 
-  // Outros (pequenos)
-  if(pequenos.length){
-    const aggEtapas = {};
-    pequenos.forEach(f=>(etapas[f.nome]||[]).forEach(e=>{aggEtapas[e.nome]=(aggEtapas[e.nome]||0)+e.t;}));
-    const totPeq = Object.values(aggEtapas).reduce((s,v)=>s+v,0);
-    const detalheRows = pequenos.map(f=>{
-      const ef = Object.fromEntries((etapas[f.nome]||[]).map(e=>[e.nome,e.t]));
-      const tot = Object.values(ef).reduce((s,v)=>s+v,0);
-      return `<tr style="background:var(--bg)">
-        <td style="padding-left:28px;font-size:.76rem;color:var(--muted)">${esc(f.nome)}</td>
-        <td style="font-size:.76rem">${fmtN(tot)}</td>
-        ${etapasCols.map(e=>`<td style="font-size:.72rem;text-align:right">${ef[e]>0?fmtN(ef[e]):''}</td>`).join('')}
-      </tr>`;
-    }).join('');
-    rows += `
-    <tr class="ori-row" onclick="toggleDeals('${prefix}-et-outros')" style="cursor:pointer">
-      <td class="td-name"><span id="${prefix}-et-outros-arr">▶</span> Outros (${pequenos.length} funis)</td>
-      <td>${fmtN(totPeq)}</td>
-      ${etapasCols.map(e=>`<td style="font-size:.75rem;text-align:right">${aggEtapas[e]>0?fmtN(aggEtapas[e]):''}</td>`).join('')}
-    </tr>
-    <tr id="${prefix}-et-outros" class="outros-hidden">
-      <td colspan="${2+etapasCols.length}" style="padding:0">${detalheRows}</td>
-    </tr>`;
-  }
+      // ── Por Campanha: independente do produto ──────────────
+      if (camp) {
+        const gc=D[camp].camp;
+        if (_ym===curYM) {
+          gc.mes.t++;gc.mes.rev+=val;
+          if (!gc.mes.dia[_d]) gc.mes.dia[_d]={t:0,r:0};
+          gc.mes.dia[_d].t++;gc.mes.dia[_d].r+=val;
+          gc.mes.deals.push({
+            campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
+          });
+          const nomeProd=String(deal[PRODUCT_FIELD]||'Não informado').trim();
+          if (!gc.mes.produtos[nomeProd]) gc.mes.produtos[nomeProd]={t:0,rev:0};
+          gc.mes.produtos[nomeProd].t++;
+          gc.mes.produtos[nomeProd].rev+=val;
+        }
+        if (wSet.has(_w)) {if (!gc.sem[_w]) gc.sem[_w]={t:0,r:0};gc.sem[_w].t++;gc.sem[_w].r+=val;}
+      }
 
-  return `<table>
-    <thead><tr>
-      <th>Funil</th><th>Abertos</th>
-      ${etapasCols.map(e=>`<th style="font-size:.55rem;padding:7px 5px">${esc(e)}</th>`).join('')}
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
-}
-
-function renderFunisChart(funis, col){
-  dk('ch-funis-rosca');
-  const ctx=document.getElementById('ch-funis-rosca');
-  if(!ctx||!funis||!funis.length) return;
-  const PAL=['#4a6fa5','#0e7490','#b8873f','#4a7c6a','#c0533a','#7b5ea7','#2d7da8','#c47a2d'];
-  charts['ch-funis-rosca']=new Chart(ctx,{
-    type:'doughnut',
-    data:{
-      labels:funis.map(f=>f.nome),
-      datasets:[{
-        data:funis.map(f=>f.t),
-        backgroundColor:funis.map((_,i)=>PAL[i%PAL.length]),
-        borderColor:'#fff',borderWidth:2,hoverOffset:6,
-      }]
-    },
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
-      plugins:{
-        legend:{position:'bottom',labels:{font:{size:9},padding:8,boxWidth:9}},
-        datalabels:{
-          display:c=>c.dataset.data[c.dataIndex]>0,
-          formatter:(v,c)=>{const tot=c.dataset.data.reduce((s,x)=>s+x,0);return tot>0?Math.round(v/tot*100)+'%':'';},
-          color:'#fff',font:{family:'DM Sans',size:9,weight:'700'},
-        },
-        tooltip:{callbacks:{label:c=>` ${fmtN(c.parsed)} leads (${Math.round(c.parsed/c.dataset.data.reduce((s,x)=>s+x,0)*100)}%)`}},
+      // ── Por Produto: só classifica produtos LEAN/CES ──────
+      if (!prods.length) continue;
+      for (const p of prods) {
+        const g=D[p].ganhos;
+        if (_ym===curYM) {
+          g.mes.t++;g.mes.rev+=val;
+          if (!g.mes.dia[_d]) g.mes.dia[_d]={t:0,r:0};
+          g.mes.dia[_d].t++;g.mes.dia[_d].r+=val;
+          if (!g.mes.origens[origem]) g.mes.origens[origem]={t:0,rev:0,deals:[]};
+          g.mes.origens[origem].t++;g.mes.origens[origem].rev+=val;
+          g.mes.origens[origem].deals.push({
+            campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
+          });
+          g.mes.origTemporal[tempCat]=(g.mes.origTemporal[tempCat]||0)+1;
+        }
+        if (wSet.has(_w)) {if (!g.sem[_w]) g.sem[_w]={t:0,r:0};g.sem[_w].t++;g.sem[_w].r+=val;}
       }
     }
-  });
-}
 
-function toggleOutros(id){
-  const el  = document.getElementById(id);
-  const arr = document.getElementById(id+'-arr');
-  if(!el) return;
-  const open = el.classList.toggle('open');
-  if(arr) arr.textContent = open ? '▼' : '▶';
-}
+    // ── PERDIDOS ─────────────────────────────────────────────
+    for (const deal of dealsPerdidos) {
+      if (deal.status!=='lost'||!deal.lost_time) continue;
+      const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
+      if (!camp) continue;
+      const _ym=toYM(deal.lost_time),_w=weekStart(deal.lost_time);
+      const dp=D[camp].perdidos;
+      const addYM=toYM(deal.add_time);
+      let tempCat;
+      if (addYM===curYM) tempCat='cur';
+      else if (addYM===prevYM) tempCat='prev';
+      else if (addYM===prev2YM) tempCat='prev2';
+      else tempCat='antes';
+      if (_ym===curYM) {
+        const _d=toYMD(deal.lost_time);
+        const motivo=deal.lost_reason?.trim()||'Não informado';
+        const timeNome=classifyTime(deal.pipeline_id);
+        dp.mes.t++;
+        dp.mes.dia[_d]=(dp.mes.dia[_d]||0)+1;
+        dp.mes.motivos[motivo]=(dp.mes.motivos[motivo]||0)+1;
+        dp.mes.motivosTimes[timeNome][motivo]=(dp.mes.motivosTimes[timeNome][motivo]||0)+1;
+        dp.mes.origTemporal[tempCat]=(dp.mes.origTemporal[tempCat]||0)+1;
+        // Perdidos na etapa NEGOCIAÇÃO
+        const stageIdP=String(deal.stage_id||'');
+        const stageInfoP=stageMap[stageIdP];
+        if (stageInfoP&&/negoci/i.test(stageInfoP.name)) {
+          dp.mes.negociacao.push({
+            id:    deal.id,
+            title: deal.title||'—',
+            owner: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            motivo,
+            dataPerda: _d,
+          });
+        }
+        // Score dos perdidos
+        const score=calcularScore(deal,regrasScore);
+        const faixa=faixaScore(score);
+        if (faixa) dp.mes.scoreFaixas[faixa]=(dp.mes.scoreFaixas[faixa]||0)+1;
+        // Analítica: só para Sem perfil e Sem interesse
+        const motivosAnalitica=['Sem perfil','Sem interesse'];
+        if (motivosAnalitica.includes(motivo)) {
+          const an=dp.mes.analitica[motivo];
+          const fieldMap={renda:FIELD_RENDA,cargo:FIELD_CARGO,idade:FIELD_IDADE,escolaridade:FIELD_ESCOLARIDADE};
+          ['renda','cargo','idade','escolaridade'].forEach(tipo=>{
+            const {legenda,raw}=legendaDoTipo(tipo,deal[fieldMap[tipo]],regrasScore);
+            an[tipo][legenda]=(an[tipo][legenda]||0)+1;
+            // Guarda raw para TODOS os itens (não só Outros)
+            const rawKey=String(deal[fieldMap[tipo]]||'').trim().slice(0,80)||'(vazio)';
+            const rawNorm=rawKey.toLowerCase();
+            if (!an.outrosRaw[tipo][legenda]) an.outrosRaw[tipo][legenda]={};
+            an.outrosRaw[tipo][legenda][rawNorm]=(an.outrosRaw[tipo][legenda][rawNorm]||0)+1;
+          });
+        }
+      }
+      if (wSet.has(_w)) dp.sem[_w]=(dp.sem[_w]||0)+1;
+    }
 
-function setMotivoAn(m){
-  MOTIVO_AN=m;
-  renderAnalitica();
-}
+    // ── Serialização ──────────────────────────────────────────
+    const MES_NOMES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const ymLabel=ym=>{const[y,m]=ym.split('-');return MES_NOMES[+m-1]+'/'+y.slice(2);};
+    const origTemporalSer=(ot,total)=>[
+      {label:`Mês atual (${ymLabel(curYM)})`,v:ot.cur||0, pct:total>0?Math.round((ot.cur||0)/total*100):0},
+      {label:ymLabel(prevYM),                v:ot.prev||0,pct:total>0?Math.round((ot.prev||0)/total*100):0},
+      {label:ymLabel(prev2YM),               v:ot.prev2||0,pct:total>0?Math.round((ot.prev2||0)/total*100):0},
+      {label:`Antes de ${ymLabel(prev2YM)}`, v:ot.antes||0,pct:total>0?Math.round((ot.antes||0)/total*100):0},
+    ];
+    const serFaixas=(sf,total)=>SCORE_FAIXAS.map(f=>{
+      const v=sf[f.label]||0;
+      return {label:f.label,v,pct:total>0?+((v/total)*100).toFixed(1):0};
+    });
 
-function switchGanhos(view){
-  const isProd=view==='prod';
-  document.getElementById('view-prod').style.display=isProd?'block':'none';
-  document.getElementById('view-camp').style.display=isProd?'none':'block';
-  document.getElementById('gtog-prod').classList.toggle('active',isProd);
-  document.getElementById('gtog-camp').classList.toggle('active',!isProd);
-}
+    const ser = p => ({
+      criados: {
+        total:   p.criados.mes.t,
+        mediaDia:allDays.length?+(p.criados.mes.t/allDays.length).toFixed(1):0,
+        status:  p.criados.mes.st,
+        taxaConv:p.criados.mes.t>0?+((p.criados.mes.st.g/p.criados.mes.t)*100).toFixed(1):0,
+        porDia:  allDays.map(d=>({d,v:p.criados.mes.dia[d]||0,a:p.criados.mes.diaA[d]||0,g:p.criados.mes.diaG[d]||0,p:p.criados.mes.diaP[d]||0})),
+        porSemana:weeks.map(w=>({w,v:p.criados.sem[w]||0})),
+        produtosVendidos:Object.entries(p.criados.mes.produtosVendidos).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
+        scoreFaixas:serFaixas(p.criados.mes.scoreFaixas,p.criados.mes.t),
+        etapas: Object.fromEntries(
+          Object.entries(p.criados.mes.etapas).map(([funil,etapas])=>[funil,
+            Object.entries(etapas)
+              .sort((a,b)=>a[1].order-b[1].order)
+              .map(([nome,x])=>({nome,t:x.t}))
+          ])
+        ),
+        funis: Object.entries(p.criados.mes.funis)
+          .sort((a,b)=>b[1].t-a[1].t)
+          .map(([nome,f])=>({
+            nome,
+            t: f.t,
+            pct: p.criados.mes.t>0?Math.round(f.t/p.criados.mes.t*100):0,
+            scoreFaixas: serFaixas(f.scoreFaixas, f.t),
+          })),
+      },
+      ganhos: {
+        porProduto: {
+          total:  p.ganhos.mes.t,receita:p.ganhos.mes.rev,
+          ticket: p.ganhos.mes.t?p.ganhos.mes.rev/p.ganhos.mes.t:0,
+          porDia: allDays.map(d=>({d,v:p.ganhos.mes.dia[d]?.t||0,r:p.ganhos.mes.dia[d]?.r||0})),
+          porSemana:weeks.map(w=>({w,v:p.ganhos.sem[w]?.t||0,r:p.ganhos.sem[w]?.r||0})),
+          origens:Object.entries(p.ganhos.mes.origens).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
+          origemTemporal:origTemporalSer(p.ganhos.mes.origTemporal,p.ganhos.mes.t),
+        },
+        porCampanha: {
+          total:  p.camp.mes.t,receita:p.camp.mes.rev,
+          ticket: p.camp.mes.t?p.camp.mes.rev/p.camp.mes.t:0,
+          porDia: allDays.map(d=>({d,v:p.camp.mes.dia[d]?.t||0,r:p.camp.mes.dia[d]?.r||0})),
+          porSemana:weeks.map(w=>({w,v:p.camp.sem[w]?.t||0,r:p.camp.sem[w]?.r||0})),
+          origemTemporal:origTemporalSer(p.ganhos.mes.origTemporal,p.camp.mes.t),
+          deals:p.camp.mes.deals,
+          produtos:Object.entries(p.camp.mes.produtos)
+            .sort((a,b)=>b[1].rev-a[1].rev)
+            .map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0})),
+        },
+      },
+      perdidos: {
+        total:    p.perdidos.mes.t,
+        mediaDia: allDays.length?+(p.perdidos.mes.t/allDays.length).toFixed(1):0,
+        porDia:   allDays.map(d=>({d,v:p.perdidos.mes.dia[d]||0})),
+        porSemana:weeks.map(w=>({w,v:p.perdidos.sem[w]||0})),
+        topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
+        motivosTimes: Object.fromEntries(
+          Object.entries(p.perdidos.mes.motivosTimes).map(([time,motivos])=>{
+            const tot=Object.values(motivos).reduce((s,v)=>s+v,0);
+            return [time, {
+              total: tot,
+              top: Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:tot?Math.round(c/tot*100):0}))
+            }];
+          })
+        ),
+        origemTemporal:origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
+        negociacao: p.perdidos.mes.negociacao.sort((a,b)=>b.dataPerda.localeCompare(a.dataPerda)),
+        scoreFaixas:serFaixas(p.perdidos.mes.scoreFaixas,p.perdidos.mes.t),
+        analitica: Object.fromEntries(
+          Object.entries(p.perdidos.mes.analitica).map(([motivo,tipos])=>{
+            const {outrosRaw,...tiposSemRaw}=tipos;
+            const serialized=Object.fromEntries(Object.entries(tiposSemRaw).map(([tipo,legs])=>{
+              const total=Object.values(legs).reduce((s,v)=>s+v,0);
+              const itens=Object.entries(legs).sort((a,b)=>b[1]-a[1]).map(([leg,v])=>{
+                // Raw values para esta legenda específica
+                const rawMap=outrosRaw[tipo]?.[leg]||{};
+                const rawItems=Object.entries(rawMap).sort((a,b)=>b[1]-a[1]).slice(0,30).map(([raw,v])=>({raw,v}));
+                return {leg,v,pct:total>0?Math.round(v/total*100):0,rawItems};
+              });
+              return [tipo, {itens}];
+            }));
+            return [motivo, serialized];
+          })
+        ),
+      },
+    });
 
-function toggleDeals(id){
-  const row=document.getElementById(id);if(!row)return;
-  // Arrow: busca span com id = id+'-arr' (padrão novo)
-  // ou prefixo-arr-sufixo (padrão antigo das tabelas de campanha)
-  let arrow=document.getElementById(id+'-arr');
-  if(!arrow){
-    const parts=id.split('-');
-    const idx=parts[parts.length-1];
-    const prefix=parts.slice(0,-1).join('-');
-    arrow=document.getElementById(prefix+'-arr-'+idx);
+    res.json({ok:true,mes:curYM,updatedAt:new Date().toISOString(),lean:ser(D.LEAN),ces:ser(D.CES)});
+  } catch(e) {
+    console.error('[/api/report]',e);
+    res.status(500).json({ok:false,error:e.message});
   }
-  const isHidden=row.classList.contains('outros-hidden')||row.style.display==='none'||row.style.display==='';
-  if(isHidden){row.classList.remove('outros-hidden');row.style.display='table-row';}
-  else{row.style.display='none';row.classList.add('outros-hidden');}
-  if(arrow)arrow.textContent=isHidden?'▼':'▶';
-}
-
-
-/* ════════════════════════════════════════════════════════════
-   SNAPSHOT · COMPARAÇÃO · HISTÓRICO
-   ════════════════════════════════════════════════════════════ */
-let SNAP = null; // snapshot carregado para comparação
-
-/* ── Snapshot: baixa JSON ── */
-function doSnapshot(){
-  if(!DATA){alert('Carregue os dados primeiro.');return;}
-  const now = new Date();
-  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-  const nome = `${dias[now.getDay()]}, ${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const payload = { nome, criadoEm: now.toISOString(), produto: PROD, data: DATA };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `snapshot-${PROD}-${now.toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ── Modal comparar ── */
-function openComparar(){ document.getElementById('cmpOverlay').classList.add('open'); }
-function closeCmpModal(){ document.getElementById('cmpOverlay').classList.remove('open'); }
-
-function onCmpFile(e){
-  const file = e.target.files[0]; if(!file)return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try{
-      const json = JSON.parse(ev.target.result);
-      if(!json.data){ alert('Arquivo inválido.'); return; }
-      SNAP = json;
-      closeCmpModal();
-      aplicarComparacao();
-    }catch(err){ alert('Erro ao ler arquivo: '+err.message); }
-  };
-  reader.readAsText(file);
-  e.target.value=''; // reset input
-}
-
-function aplicarComparacao(){
-  if(!SNAP)return;
-  document.getElementById('cmpBanner').classList.add('on');
-  document.getElementById('cmpBannerTxt').textContent = `Comparando com: ${SNAP.nome}`;
-  document.getElementById('btnLimparCmp').style.display='inline-block';
-  render(); // re-render com SNAP disponível
-}
-
-function limparComparacao(){
-  SNAP=null;
-  document.getElementById('cmpBanner').classList.remove('on');
-  document.getElementById('btnLimparCmp').style.display='none';
-  render();
-}
-
-/* ── Helpers de delta ── */
-function deltaHtml(atual, anterior){
-  if(!anterior||anterior===0) return '';
-  const pct = ((atual-anterior)/anterior*100);
-  const abs  = Math.abs(pct).toFixed(0)+'%';
-  if(Math.abs(pct)<0.5) return `<span class="kpi-delta delta-eq">= mesmo</span>`;
-  const up = pct>0;
-  return `<span class="kpi-delta ${up?'delta-up':'delta-dn'}">${up?'▲':'▼'} ${abs} vs snap</span>`;
-}
-
-function ppDelta(atualPct, anteriorPct){
-  if(anteriorPct===undefined||anteriorPct===null) return '';
-  const diff = atualPct - anteriorPct;
-  if(Math.abs(diff)<0.5) return `<span class="motivo-delta delta-eq">=</span>`;
-  const up = diff>0;
-  return `<span class="motivo-delta ${up?'delta-up':'delta-dn'}">${up?'+':''}${diff.toFixed(0)}pp</span>`;
-}
-
-/* ── Histórico ── */
-function openHistorico(){
-  renderHistorico();
-  document.getElementById('histOverlay').classList.add('open');
-}
-function closeHistorico(){ document.getElementById('histOverlay').classList.remove('open'); }
-
-function getSnaps(){
-  try{ return JSON.parse(localStorage.getItem('ba_snaps')||'[]'); }catch{ return []; }
-}
-function saveSnaps(arr){ localStorage.setItem('ba_snaps',JSON.stringify(arr)); }
-
-function renderHistorico(){
-  const snaps = getSnaps();
-  const el = document.getElementById('histList');
-  if(!snaps.length){
-    el.innerHTML='<div class="hist-empty">Nenhum snapshot salvo.<br><small>Use o botão 📸 Snapshot para gravar.</small></div>';
-    return;
-  }
-  el.innerHTML = snaps.slice().reverse().map((s,ri)=>{
-    const i = snaps.length-1-ri;
-    return `<div class="hist-item">
-      <div class="hist-item-left">
-        <h4>${esc(s.nome)}</h4>
-        <p>Produto: ${(s.produto||'—').toUpperCase()} · ${new Date(s.criadoEm).toLocaleString('pt-BR')}</p>
-      </div>
-      <div class="hist-item-btns">
-        <button class="hist-btn hist-btn-pdf" onclick="printSnapshot(${i})">🖨 PDF</button>
-        <button class="hist-btn" onclick="downloadSnap(${i})">⬇ JSON</button>
-        <button class="hist-btn hist-btn-del" onclick="deleteSnap(${i})">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function deleteSnap(i){
-  if(!confirm('Deletar este snapshot?'))return;
-  const arr=getSnaps(); arr.splice(i,1); saveSnaps(arr); renderHistorico();
-}
-
-function downloadSnap(i){
-  const s=getSnaps()[i]; if(!s)return;
-  const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;
-  a.download=`snapshot-${(s.produto||'snap')}-${s.criadoEm.slice(0,10)}.json`;
-  a.click();URL.revokeObjectURL(url);
-}
-
-function printSnapshot(i){
-  const s=getSnaps()[i]; if(!s)return;
-  const win=window.open('','_blank','width=900,height=700');
-  win.document.write(buildPrintHtml(s));
-  win.document.close();
-  win.onload=()=>{win.print();};
-}
-
-function buildPrintHtml(snap){
-  const d    = snap.data;
-  const nome = snap.nome || '—';
-  const criadoEm = snap.criadoEm ? new Date(snap.criadoEm).toLocaleString('pt-BR') : '—';
-
-  const fmtM2 = ym => {
-    if(!ym) return '—';
-    const[y,mo]=ym.split('-');
-    return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y;
-  };
-  const brl2  = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
-  const fmtN2 = n => Math.round(n).toLocaleString('pt-BR');
-
-  function produtoPages(prod){
-    const col  = prod==='lean'?'#4a6fa5':'#0e7490';
-    const lbl  = prod==='lean'?'Lean Governance':'CES';
-    const pd   = d[prod];
-    if(!pd) return '';
-    const{criados,ganhos,perdidos} = pd;
-    const mes = fmtM2(d.mes);
-
-    // ── helpers de bloco ──────────────────────────────────────
-    const kpi = (l,v,s) => `
-      <div class="kbox">
-        <div class="klbl">${l}</div>
-        <div class="kval">${v}</div>
-        <div class="ksub">${s}</div>
-      </div>`;
-
-    const tbl = (headers, rows, footer) => `
-      <table>
-        <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>${rows}</tbody>
-        ${footer?`<tfoot><tr>${footer}</tr></tfoot>`:''}
-      </table>`;
-
-    const bar = (label,v,total,col2) => {
-      const pct = total>0?Math.round(v/total*100):0;
-      return `<div class="bar-row">
-        <div class="bar-lbl">${label}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col2}"></div></div>
-        <div class="bar-val">${fmtN2(v)}</div>
-        <div class="bar-pct">${pct}%</div>
-      </div>`;
-    };
-
-    // ── Criados por dia (top 10 por volume) ──────────────────
-    const diasComDados = criados.porDia.filter(x=>x.v>0);
-    const criadosPorDiaRows = diasComDados.map(x=>`
-      <tr>
-        <td>${x.d.slice(8)+'/'+(x.d.slice(5,7))}</td>
-        <td>${fmtN2(x.a)}</td>
-        <td>${fmtN2(x.g)}</td>
-        <td>${fmtN2(x.p)}</td>
-        <td><strong>${fmtN2(x.v)}</strong></td>
-      </tr>`).join('');
-
-    // ── Semanas ───────────────────────────────────────────────
-    const criadosSemRows = criados.porSemana.filter(x=>x.v>0).map(x=>`
-      <tr><td>${x.w.slice(8)+'/'+x.w.slice(5,7)}</td><td><strong>${fmtN2(x.v)}</strong></td></tr>`).join('');
-
-    // ── Score ─────────────────────────────────────────────────
-    const scoreRows = (criados.scoreFaixas||[]).map(f=>bar(f.label,f.v,criados.total,col)).join('');
-    const scorePerdRows = (perdidos.scoreFaixas||[]).map(f=>bar(f.label,f.v,perdidos.total,'#c0533a')).join('');
-
-    // ── Ganhos por dia ────────────────────────────────────────
-    const ganhosDiaRows = ganhos.porProduto.porDia.filter(x=>x.v>0).map(x=>`
-      <tr>
-        <td>${x.d.slice(8)+'/'+x.d.slice(5,7)}</td>
-        <td>${fmtN2(x.v)}</td>
-        <td>${brl2(x.r)}</td>
-        <td>${x.v>0?brl2(x.r/x.v):'—'}</td>
-      </tr>`).join('');
-
-    // ── Origens (ganhos por produto) ──────────────────────────
-    const origensRows = (ganhos.porProduto.origens||[]).map(o=>`
-      <tr><td>${o.nome}</td><td>${fmtN2(o.t)}</td><td>${brl2(o.rev)}</td><td>${brl2(o.ticket)}</td></tr>`).join('');
-
-    // ── Origem temporal (ganhos) ──────────────────────────────
-    const origTempGRows = (ganhos.porProduto.origemTemporal||[]).map(o=>bar(o.label,o.v,ganhos.porProduto.total,col)).join('');
-
-    // ── Perdidos por dia ──────────────────────────────────────
-    const perdidosDiaRows = perdidos.porDia.filter(x=>x.v>0).map(x=>`
-      <tr><td>${x.d.slice(8)+'/'+x.d.slice(5,7)}</td><td><strong>${fmtN2(x.v)}</strong></td></tr>`).join('');
-
-    // ── Motivos ───────────────────────────────────────────────
-    const motivosRows = perdidos.topMotivos.map(m=>`
-      <tr><td>${m.m}</td><td>${m.c}</td><td>${m.pct}%</td></tr>`).join('');
-
-    // ── Origem temporal (perdidos) ────────────────────────────
-    const origTempPRows = (perdidos.origemTemporal||[]).map(o=>bar(o.label,o.v,perdidos.total,'#c0533a')).join('');
-
-    // ── Produtos dos criados ──────────────────────────────────
-    const prodCriadosRows = (criados.produtosVendidos||[]).map(p=>`
-      <tr><td>${p.nome}</td><td>${fmtN2(p.t)}</td><td>${brl2(p.rev)}</td><td>${brl2(p.ticket)}</td></tr>`).join('');
-
-    return `
-    <!-- ══ PÁG: TÍTULO PRODUTO ══════════════════════════════ -->
-    <div class="pg" style="border-top:4px solid ${col}">
-      <div class="prod-eyebrow">Board Academy · Inteligência Comercial</div>
-      <div class="prod-title" style="color:${col}">${lbl}</div>
-      <div class="prod-sub">${mes} · Relatório Gerencial</div>
-      <div class="prod-meta">Gerado em: ${nome}</div>
-    </div>
-
-    <!-- ══ PÁG: CRIADOS ════════════════════════════════════ -->
-    <div class="pg">
-      <div class="sec-head" style="border-color:${col}">
-        <div class="sec-eyebrow">Eixo temporal · Data de Criação</div>
-        <div class="sec-title">Leads Criados · ${mes}</div>
-      </div>
-
-      <div class="krow">
-        ${kpi('Total Criados',fmtN2(criados.total),criados.mediaDia+' por dia')}
-        ${kpi('Em Aberto',fmtN2(criados.status.a),criados.total>0?((criados.status.a/criados.total)*100).toFixed(0)+'% do total':'—')}
-        ${kpi('Ganhos dos criados',fmtN2(criados.status.g),'leads criados este mês')}
-        ${kpi('Perdidos dos criados',fmtN2(criados.status.p),'leads criados este mês')}
-        ${kpi('Taxa de Conversão',criados.taxaConv+'%','ganhos ÷ criados')}
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="blk-title">Volume por dia</div>
-          ${tbl(['Dia','Aberto','Ganho','Perdido','Total'], criadosPorDiaRows||'<tr><td colspan="5" class="empty">Sem dados</td></tr>', null)}
-        </div>
-        <div>
-          <div class="blk-title">Volume por semana (Qui→Qua)</div>
-          ${tbl(['Semana','Total'], criadosSemRows||'<tr><td colspan="2" class="empty">Sem dados</td></tr>', null)}
-
-          ${prodCriadosRows ? `
-          <div class="blk-title" style="margin-top:16px">Produtos vendidos dos criados</div>
-          ${tbl(['Produto','Vendas','Receita','Ticket'], prodCriadosRows, null)}` : ''}
-        </div>
-      </div>
-
-      <div class="blk-title" style="margin-top:16px">Score dos leads criados · % por faixa</div>
-      <div class="bars">${scoreRows||'<div class="empty">Sem dados de score</div>'}</div>
-    </div>
-
-    <!-- ══ PÁG: GANHOS ═════════════════════════════════════ -->
-    <div class="pg">
-      <div class="sec-head" style="border-color:#166534">
-        <div class="sec-eyebrow">Eixo temporal · Data de Ganho · Por Produto Vendido</div>
-        <div class="sec-title">Negócios Ganhos · ${mes}</div>
-      </div>
-
-      <div class="krow">
-        ${kpi('Vendas',fmtN2(ganhos.porProduto.total),'negócios ganhos')}
-        ${kpi('Receita',brl2(ganhos.porProduto.receita),'total')}
-        ${kpi('Ticket Médio',ganhos.porProduto.ticket>0?brl2(ganhos.porProduto.ticket):'—','por fechamento')}
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="blk-title">Ganhos por dia</div>
-          ${tbl(['Dia','Vendas','Receita','Ticket'], ganhosDiaRows||'<tr><td colspan="4" class="empty">Sem dados</td></tr>', null)}
-        </div>
-        <div>
-          <div class="blk-title">Campanha de origem das vendas</div>
-          ${tbl(['Origem','Vendas','Receita','Ticket'], origensRows||'<tr><td colspan="4" class="empty">Sem dados</td></tr>',
-            origensRows?`<td>Total</td><td>${fmtN2(ganhos.porProduto.total)}</td><td>${brl2(ganhos.porProduto.receita)}</td><td>${brl2(ganhos.porProduto.ticket)}</td>`:null)}
-
-          <div class="blk-title" style="margin-top:16px">Quando foi criado o lead que virou venda</div>
-          <div class="bars">${origTempGRows||'<div class="empty">Sem dados</div>'}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ PÁG: PERDIDOS ═══════════════════════════════════ -->
-    <div class="pg">
-      <div class="sec-head" style="border-color:#991b1b">
-        <div class="sec-eyebrow">Eixo temporal · Data de Perda</div>
-        <div class="sec-title">Negócios Perdidos · ${mes}</div>
-      </div>
-
-      <div class="krow">
-        ${kpi('Total Perdidos',fmtN2(perdidos.total),perdidos.mediaDia+' por dia')}
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="blk-title">Perdidos por dia</div>
-          ${tbl(['Dia','Total'], perdidosDiaRows||'<tr><td colspan="2" class="empty">Sem dados</td></tr>', null)}
-        </div>
-        <div>
-          <div class="blk-title">Top motivos de perda</div>
-          ${tbl(['Motivo','Qtd','%'], motivosRows||'<tr><td colspan="3" class="empty">Sem dados</td></tr>', null)}
-
-          <div class="blk-title" style="margin-top:16px">Quando foi criado o lead que foi perdido</div>
-          <div class="bars">${origTempPRows||'<div class="empty">Sem dados</div>'}</div>
-        </div>
-      </div>
-
-      <div class="blk-title" style="margin-top:16px">Score dos leads perdidos · % por faixa</div>
-      <div class="bars">${scorePerdRows||'<div class="empty">Sem dados de score</div>'}</div>
-    </div>`;
-  }
-
-  const hoje = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-
-  return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Relatório · ${nome}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#f2ede6;color:#1c2020;font-size:12px;-webkit-font-smoothing:antialiased}
-@page{size:A4 portrait;margin:12mm 10mm}
-@media print{
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  body{background:#fff!important}
-  .pg{page-break-before:always;page-break-inside:avoid}
-  .pg:first-child{page-break-before:auto}
-  .no-break{page-break-inside:avoid}
-}
-
-/* Páginas */
-.pg{padding:20px 0;min-height:260mm}
-
-/* Capa */
-.cover{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:260mm;padding:40px 0}
-.cover-logo{font-family:'Fraunces',serif;font-size:.9rem;font-weight:700;color:#b8873f;letter-spacing:.08em;text-transform:uppercase;margin-bottom:40px}
-.cover-title{font-family:'Fraunces',serif;font-size:2.6rem;font-weight:700;color:#1c2b3a;line-height:1.1;margin-bottom:12px}
-.cover-date{font-size:1rem;color:#8a8277;margin-bottom:4px}
-.cover-snap{font-size:.78rem;color:#aaa;margin-top:32px;padding-top:16px;border-top:1px solid #e0d9d0}
-.cover-line{width:60px;height:4px;border-radius:2px;background:linear-gradient(90deg,#4a6fa5,#0e7490);margin:20px 0}
-
-/* Produto capa */
-.prod-eyebrow{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8a8277;margin-bottom:6px}
-.prod-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;line-height:1.1;margin-bottom:8px}
-.prod-sub{font-size:.85rem;color:#8a8277;margin-bottom:4px}
-.prod-meta{font-size:.72rem;color:#aaa;margin-top:24px;padding-top:12px;border-top:1px solid #e0d9d0}
-
-/* Seção */
-.sec-head{border-left:4px solid;padding-left:12px;margin-bottom:16px}
-.sec-eyebrow{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8a8277;margin-bottom:3px}
-.sec-title{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:#1c2b3a}
-
-/* KPIs */
-.krow{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.kbox{background:#fff;border:1px solid #e0d9d0;border-radius:7px;padding:12px 10px;flex:1;min-width:100px}
-.klbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:#8a8277;margin-bottom:5px}
-.kval{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:#1c2b3a;line-height:1}
-.ksub{font-size:.62rem;color:#8a8277;margin-top:3px}
-
-/* Dois blocos lado a lado */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-
-/* Tabelas */
-.blk-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a8277;margin-bottom:8px}
-table{width:100%;border-collapse:collapse;font-size:.75rem;background:#fff;border-radius:6px;overflow:hidden}
-thead tr{background:#1c2b3a}
-thead th{color:rgba(255,255,255,.75);font-size:.6rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:7px 9px;text-align:left}
-thead th:not(:first-child){text-align:right}
-tbody tr{border-bottom:1px solid #e0d9d0}
-tbody tr:last-child{border-bottom:none}
-tbody td{padding:6px 9px;color:#1c2020}
-tbody td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
-tfoot tr{background:#f5e9d6}
-tfoot td{padding:6px 9px;font-weight:700;color:#1c2b3a;border-top:1.5px solid #e0d9d0}
-tfoot td:not(:first-child){text-align:right}
-.empty{color:#8a8277;font-size:.72rem;padding:8px}
-
-/* Barras */
-.bars{display:flex;flex-direction:column;gap:7px}
-.bar-row{display:flex;align-items:center;gap:8px}
-.bar-lbl{width:100px;flex-shrink:0;font-size:.72rem;color:#1c2020}
-.bar-track{flex:1;background:#e0d9d0;border-radius:3px;height:6px}
-.bar-fill{height:6px;border-radius:3px}
-.bar-val{width:34px;text-align:right;font-size:.72rem;font-weight:700;color:#1c2b3a}
-.bar-pct{width:32px;text-align:right;font-size:.68rem;color:#8a8277}
-</style>
-</head>
-<body>
-
-<!-- ══ CAPA ═══════════════════════════════════════════════════ -->
-<div class="pg">
-  <div class="cover">
-    <div class="cover-logo">Board Academy · Inteligência Comercial</div>
-    <div class="cover-title">Relatório<br>Gerencial</div>
-    <div class="cover-line"></div>
-    <div class="cover-date">${hoje}</div>
-    <div class="cover-snap">Gerado de: ${nome}</div>
-  </div>
-</div>
-
-${produtoPages('lean')}
-${produtoPages('ces')}
-
-</body></html>`;
-}
-
-
-/* ── PDF ── */
-function gerarPDF(){
-  // Usa snapshot carregado se houver, senão usa dados ao vivo
-  const snapData = SNAP || {
-    nome: new Date().toLocaleString('pt-BR'),
-    criadoEm: new Date().toISOString(),
-    data: DATA,
-  };
-  const html = buildPrintHtml(snapData);
-  const win  = window.open('','_blank','width=960,height=720');
-  win.document.write(html);
-  win.document.close();
-  win.onload = () => { setTimeout(() => win.print(), 800); };
-}
-
-/* ── Atualizar botões ── */
-function updateCmpBtn(){
-  const btn=document.getElementById('btnComparar');
-  if(btn) btn.disabled=false;
-  const pdf=document.getElementById('btnPdf');
-  if(pdf) pdf.disabled=false;
-}
-
-async function loadData(){
-  const err=document.getElementById('errBanner');
-  err.style.display='none';
-  try{
-    const r=await fetch(`/api/report?mes=${MES_FILTRO||''}`);
-    const j=await r.json();
-    if(!j.ok)throw new Error(j.error);
-    DATA=j;render();renderAnalitica();updateCmpBtn();
-  }catch(e){
-    err.textContent=`Erro ao carregar: ${e.message}`;
-    err.style.display='block';
-    document.getElementById('content').innerHTML='<div class="state-wrap"><span>Não foi possível carregar os dados.</span></div>';
-  }
-}
-
-async function doRefresh(){
-  const btn=document.getElementById('btnRefresh');
-  btn.disabled=true;btn.textContent='↺ Atualizando…';
-  document.getElementById('content').innerHTML='<div class="state-wrap"><div class="spinner"></div><span>Atualizando…</span></div>';
-  await loadData();
-  btn.disabled=false;btn.textContent='↺ Atualizar';
-}
-
-buildMesSelector();
-loadData();
-</script>
-
-</div></div><!-- fim pageMain -->
-
-<!-- ════ FERRAMENTAS DE APRESENTAÇÃO ════
-     L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom ════ -->
-<canvas id="pCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;"></canvas>
-<svg id="pSvg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:8001;pointer-events:none;overflow:visible;"></svg>
-<div id="pSpot" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:7999;pointer-events:none;display:none;"></div>
-<div id="pZoomBox" style="position:fixed;border:2px dashed #f5c518;background:rgba(245,197,24,.08);z-index:8010;pointer-events:none;display:none;"></div>
-<div id="pZoomView" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9000;background:#f2ede6;display:none;overflow:hidden;">
-  <div id="pZoomContent" style="position:absolute;transform-origin:top left;"></div>
-  <button onclick="exitZoom()" style="position:fixed;top:18px;right:24px;background:#1c2b3a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;z-index:9999;">✕ Sair do Zoom (Esc)</button>
-</div>
-<div id="pToolbar" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(28,43,58,.95);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:40px;display:flex;align-items:center;gap:4px;padding:6px 10px;z-index:9500;box-shadow:0 8px 32px rgba(0,0,0,.4);font-family:'DM Sans',sans-serif;">
-  <div style="font-size:.58rem;color:rgba(255,255,255,.3);letter-spacing:.08em;text-transform:uppercase;padding:0 8px 0 4px;border-right:1px solid rgba(255,255,255,.1);margin-right:4px;">Apresentação</div>
-  <button class="ptool" id="pt-laser" onclick="setTool('laser')" title="Laser (L)">🔴 Laser</button>
-  <button class="ptool" id="pt-arrow" onclick="setTool('arrow')" title="Seta (A)">↗ Seta</button>
-  <button class="ptool" id="pt-pen"   onclick="setTool('pen')"   title="Caneta (C)">✏️ Caneta</button>
-  <button class="ptool" id="pt-spot"  onclick="setTool('spot')"  title="Spotlight (S)">🔦 Foco</button>
-  <button class="ptool" id="pt-zoom"  onclick="setTool('zoom')"  title="Zoom (Z)">🔍 Zoom</button>
-  <div style="width:1px;height:20px;background:rgba(255,255,255,.1);margin:0 4px;"></div>
-  <button class="ptool" onclick="clearCanvas()" title="Limpar (Del)" style="color:rgba(255,100,100,.8)">✕ Limpar</button>
-</div>
-<style>
-.ptool{background:none;border:none;color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;padding:6px 13px;border-radius:24px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.ptool:hover{background:rgba(255,255,255,.1);color:#fff}
-.ptool.on{background:rgba(245,197,24,.25);color:#f5c518;border:1px solid rgba(245,197,24,.4)}
-</style>
-<script>
-let pTool=null,pDraw=false,pPoints=[],pArrow=null;
-const pCvs=document.getElementById('pCanvas');
-const pCtx=pCvs.getContext('2d');
-const pSvg=document.getElementById('pSvg');
-const pSpot=document.getElementById('pSpot');
-let laserTrail=[],laserEl=null,laserTrailEls=[];
-
-function resizeCvs(){pCvs.width=window.innerWidth;pCvs.height=window.innerHeight;}
-resizeCvs();window.addEventListener('resize',resizeCvs);
-
-function setTool(t){
-  pTool=pTool===t?null:t;
-  ['laser','arrow','pen','spot','zoom'].forEach(id=>{const b=document.getElementById('pt-'+id);if(b)b.classList.toggle('on',pTool===id);});
-  pCvs.style.pointerEvents=['arrow','pen','zoom'].includes(pTool)?'auto':'none';
-  document.body.style.cursor=pTool?'crosshair':'';
-  if(pTool!=='spot')pSpot.style.display='none';
-  if(pTool!=='laser')clearLaser();
-  if(pTool!=='zoom')document.getElementById('pZoomBox').style.display='none';
-  if(pTool==='spot')pSpot.style.display='block';
-}
-
-document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
-  if(e.key==='l'||e.key==='L')setTool('laser');
-  if(e.key==='a'||e.key==='A')setTool('arrow');
-  if(e.key==='c'||e.key==='C')setTool('pen');
-  if(e.key==='s'||e.key==='S')setTool('spot');
-  if(e.key==='z'||e.key==='Z')setTool('zoom');
-  if(e.key==='Delete'||e.key==='Backspace')clearCanvas();
-  if(e.key==='Escape'){exitZoom();setTool(null);}
 });
 
-function clearLaser(){
-  if(laserEl){laserEl.remove();laserEl=null;}
-  laserTrailEls.forEach(e=>e.remove());
-  laserTrailEls=[];laserTrail=[];
-}
 
-document.addEventListener('mousemove',e=>{
-  if(pTool==='laser'){
-    laserTrail.push({x:e.clientX,y:e.clientY,t:Date.now()});
-    if(laserTrail.length>20)laserTrail.shift();
-    laserTrailEls.forEach(el=>el.remove());laserTrailEls=[];
-    const now=Date.now();
-    laserTrail.forEach(pt=>{
-      const age=(now-pt.t)/400;if(age>1)return;
-      const r=Math.max(1,4*(1-age)),op=Math.max(0,0.5*(1-age));
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);c.setAttribute('r',r);c.setAttribute('fill',`rgba(255,30,30,${op})`);
-      pSvg.appendChild(c);laserTrailEls.push(c);
-    });
-    if(!laserEl){
-      laserEl=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      laserEl.setAttribute('r','5');laserEl.setAttribute('fill','rgba(255,30,30,.95)');
-      if(!document.getElementById('laserDefs')){
-        const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');defs.id='laserDefs';
-        defs.innerHTML=`<filter id="laserBlur" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
-        pSvg.prepend(defs);
-      }
-      laserEl.setAttribute('filter','url(#laserBlur)');pSvg.appendChild(laserEl);
+// ── DEBUG funis ──────────────────────────────────────────────
+app.get('/api/debug-funis', async (req,res) => {
+  if (!API_TOKEN) return res.status(500).json({ok:false});
+  try {
+    const [deals, pipelinesRaw] = await Promise.all([
+      fetchByFilter(FILTER_CRIADOS),
+      pipeGet('/pipelines').catch(()=>({data:[]})),
+    ]);
+    const pipelineMap = Object.fromEntries((pipelinesRaw.data||[]).map(p=>[String(p.id),p.name]));
+    const counts = {};
+    for (const d of deals.slice(0,200)) {
+      const id = String(d.pipeline_id||'null');
+      const name = pipelineMap[id]||'(sem nome)';
+      const key = `${id} → ${name}`;
+      counts[key] = (counts[key]||0)+1;
     }
-    laserEl.setAttribute('cx',e.clientX);laserEl.setAttribute('cy',e.clientY);
-  }
-  if(pTool==='spot')pSpot.style.background=`radial-gradient(circle 200px at ${e.clientX}px ${e.clientY}px,transparent 0%,rgba(0,0,0,.75) 100%)`;
+    res.json({ok:true, pipelines: pipelinesRaw.data?.map(p=>({id:p.id,name:p.name})), counts});
+  } catch(e) { res.status(500).json({ok:false,error:e.message}); }
 });
 
-pCvs.addEventListener('mousedown',e=>{if(!pTool)return;pDraw=true;if(pTool==='arrow')pArrow={x1:e.clientX,y1:e.clientY};if(pTool==='pen')pPoints=[{x:e.clientX,y:e.clientY}];if(pTool==='zoom')zoomStart(e);});
-pCvs.addEventListener('mousemove',e=>{if(!pDraw)return;if(pTool==='pen'){pPoints.push({x:e.clientX,y:e.clientY});drawStroke(pPoints);}if(pTool==='zoom')zoomDrag(e);});
-pCvs.addEventListener('mouseup',e=>{if(!pDraw)return;pDraw=false;if(pTool==='arrow'&&pArrow){drawArrow(pArrow.x1,pArrow.y1,e.clientX,e.clientY);pArrow=null;}if(pTool==='pen')pPoints=[];if(pTool==='zoom')zoomEnd(e);});
+// ── DEBUG temporário ─────────────────────────────────────────
+app.get('/api/debug-ganhos', async (req,res) => {
+  if (!API_TOKEN) return res.status(500).json({ok:false,error:'sem token'});
+  try {
+    const deals = await fetchByFilter(FILTER_GANHOS);
+    const now   = new Date();
+    const curYM = now.toISOString().substring(0,7);
 
-function drawStroke(pts){if(pts.length<2)return;pCtx.strokeStyle='#e03030';pCtx.lineWidth=2.5;pCtx.lineCap='round';pCtx.lineJoin='round';pCtx.beginPath();pCtx.moveTo(pts[pts.length-2].x,pts[pts.length-2].y);pCtx.lineTo(pts[pts.length-1].x,pts[pts.length-1].y);pCtx.stroke();}
+    const resultado = deals
+      .filter(d => d.status === 'won')
+      .map(d => ({
+        id:         d.id,
+        titulo:     d.title,
+        valor:      parseFloat(d.value||0),
+        add_time:   d.add_time?.substring(0,10),
+        won_time:   d.won_time?.substring(0,10),
+        won_ym:     d.won_time?.substring(0,7),
+        produto:    String(d[PRODUCT_FIELD]||'—'),
+        campanha:   String(d[CAMPAIGN_FIELD]||'—'),
+        camp_class: classifyCampaign(d[CAMPAIGN_FIELD]),
+        no_mes:     d.won_time?.substring(0,7) === curYM,
+      }))
+      .sort((a,b) => (b.won_time||'').localeCompare(a.won_time||''));
 
-function drawArrow(x1,y1,x2,y2){
-  const id=`arr${Date.now()}`;const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-  g.innerHTML=`<defs><marker id="${id}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f5c518"/></marker></defs><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f5c518" stroke-width="3" stroke-linecap="round" marker-end="url(#${id})" opacity="1" style="transition:opacity 1s ease"/>`;
-  pSvg.appendChild(g);
-  setTimeout(()=>{const l=g.querySelector('line');if(l)l.style.opacity='0';},2000);
-  setTimeout(()=>g.remove(),3100);
-}
+    res.json({ ok:true, total: resultado.length, curYM, resultado: resultado.slice(0,50) });
+  } catch(e) {
+    res.status(500).json({ok:false,error:e.message});
+  }
+});
 
-function clearCanvas(){pCtx.clearRect(0,0,pCvs.width,pCvs.height);[...pSvg.querySelectorAll('g')].forEach(g=>g.remove());}
-
-let zRect={x:0,y:0,w:0,h:0};
-const zBox=document.getElementById('pZoomBox');
-function zoomStart(e){zRect={x:e.clientX,y:e.clientY,w:0,h:0};zBox.style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px;width:0;height:0;display:block;`;}
-function zoomDrag(e){const w=e.clientX-zRect.x,h=e.clientY-zRect.y;zRect.w=w;zRect.h=h;zBox.style.left=(w<0?e.clientX:zRect.x)+'px';zBox.style.top=(h<0?e.clientY:zRect.y)+'px';zBox.style.width=Math.abs(w)+'px';zBox.style.height=Math.abs(h)+'px';}
-function zoomEnd(e){
-  zBox.style.display='none';
-  const rx=Math.min(zRect.x,e.clientX),ry=Math.min(zRect.y,e.clientY);
-  const rw=Math.abs(zRect.w),rh=Math.abs(zRect.h);
-  if(rw<30||rh<30)return;
-  const scale=Math.min(window.innerWidth/rw,window.innerHeight/rh);
-  const zv=document.getElementById('pZoomView'),zc=document.getElementById('pZoomContent');
-  const clone=document.body.cloneNode(true);
-  ['pToolbar','pCanvas','pSvg','pSpot','pZoomBox','pZoomView'].forEach(id=>{const el=clone.querySelector('#'+id);if(el)el.remove();});
-  zc.innerHTML='';zc.appendChild(clone);
-  zc.style.width=window.innerWidth+'px';zc.style.height=window.innerHeight+'px';
-  zc.style.transform=`scale(${scale}) translate(${-rx}px,${-ry}px)`;
-  zv.style.display='block';setTool(null);
-}
-function exitZoom(){document.getElementById('pZoomView').style.display='none';}
-</script>
-</body>
-</html>
+if (process.env.NODE_ENV!=='production') app.listen(PORT,()=>console.log(`✓ Porta ${PORT}`));
+module.exports = app;
