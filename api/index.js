@@ -455,6 +455,26 @@ app.get('/api/report', async (req,res) => {
 });
 
 
+// ── DEBUG funis ──────────────────────────────────────────────
+app.get('/api/debug-funis', async (req,res) => {
+  if (!API_TOKEN) return res.status(500).json({ok:false});
+  try {
+    const [deals, pipelinesRaw] = await Promise.all([
+      fetchByFilter(FILTER_CRIADOS),
+      pipeGet('/pipelines').catch(()=>({data:[]})),
+    ]);
+    const pipelineMap = Object.fromEntries((pipelinesRaw.data||[]).map(p=>[String(p.id),p.name]));
+    const counts = {};
+    for (const d of deals.slice(0,200)) {
+      const id = String(d.pipeline_id||'null');
+      const name = pipelineMap[id]||'(sem nome)';
+      const key = `${id} → ${name}`;
+      counts[key] = (counts[key]||0)+1;
+    }
+    res.json({ok:true, pipelines: pipelinesRaw.data?.map(p=>({id:p.id,name:p.name})), counts});
+  } catch(e) { res.status(500).json({ok:false,error:e.message}); }
+});
+
 // ── DEBUG temporário ─────────────────────────────────────────
 app.get('/api/debug-ganhos', async (req,res) => {
   if (!API_TOKEN) return res.status(500).json({ok:false,error:'sem token'});
