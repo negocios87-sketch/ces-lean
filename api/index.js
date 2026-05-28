@@ -187,12 +187,14 @@ async function fetchByFilter(filterId) {
 app.get('/api/report', async (req,res) => {
   if (!API_TOKEN) return res.status(500).json({ok:false,error:'PIPEDRIVE_TOKEN não configurado.'});
   try {
-    const [dealsCriados,dealsGanhos,dealsPerdidos,regrasScore] = await Promise.all([
+    const [dealsCriados,dealsGanhos,dealsPerdidos,regrasScore,pipelinesRaw] = await Promise.all([
       fetchByFilter(FILTER_CRIADOS),
       fetchByFilter(FILTER_GANHOS),
       fetchByFilter(FILTER_PERDIDOS),
       carregarRegrasScore(),
+      pipeGet('/pipelines').catch(()=>({data:[]})),
     ]);
+    const pipelineMap = Object.fromEntries((pipelinesRaw.data||[]).map(p=>[String(p.id), p.name]));
 
     const now=new Date();
     const paramMes=req.query.mes;
@@ -207,7 +209,7 @@ app.get('/api/report', async (req,res) => {
     const allDays=Array.from({length:daysInMonth},(_,i)=>`${curYM}-${String(i+1).padStart(2,'0')}`);
 
     const empty = () => ({
-      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas()}, sem:{} },
+      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas(),
@@ -236,6 +238,12 @@ app.get('/api/report', async (req,res) => {
         const score=calcularScore(deal,regrasScore);
         const faixa=faixaScore(score);
         if (faixa) dc.mes.scoreFaixas[faixa]=(dc.mes.scoreFaixas[faixa]||0)+1;
+        // Funil
+        const pipeId=String(deal.pipeline_id||'');
+        const pipeName=pipelineMap[pipeId]||pipeId||'Desconhecido';
+        if (!dc.mes.funis[pipeName]) dc.mes.funis[pipeName]={t:0,scoreFaixas:emptyFaixas()};
+        dc.mes.funis[pipeName].t++;
+        if (faixa) dc.mes.funis[pipeName].scoreFaixas[faixa]=(dc.mes.funis[pipeName].scoreFaixas[faixa]||0)+1;
         // Produtos vendidos
         const val=parseFloat(deal.value||0);
         const prods=classifyProduct(deal[PRODUCT_FIELD]);
@@ -382,6 +390,14 @@ app.get('/api/report', async (req,res) => {
         porSemana:weeks.map(w=>({w,v:p.criados.sem[w]||0})),
         produtosVendidos:Object.entries(p.criados.mes.produtosVendidos).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
         scoreFaixas:serFaixas(p.criados.mes.scoreFaixas,p.criados.mes.t),
+        funis: Object.entries(p.criados.mes.funis)
+          .sort((a,b)=>b[1].t-a[1].t)
+          .map(([nome,f])=>({
+            nome,
+            t: f.t,
+            pct: p.criados.mes.t>0?Math.round(f.t/p.criados.mes.t*100):0,
+            scoreFaixas: serFaixas(f.scoreFaixas, f.t),
+          })),
       },
       ganhos: {
         porProduto: {
