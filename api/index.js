@@ -347,10 +347,11 @@ app.get('/api/report', async (req,res) => {
           ['renda','cargo','idade','escolaridade'].forEach(tipo=>{
             const {legenda,raw}=legendaDoTipo(tipo,deal[fieldMap[tipo]],regrasScore);
             an[tipo][legenda]=(an[tipo][legenda]||0)+1;
-            if (raw) {
-              const rawNorm=raw.toLowerCase().trim();
-              an.outrosRaw[tipo][rawNorm]=(an.outrosRaw[tipo][rawNorm]||0)+1;
-            }
+            // Guarda raw para TODOS os itens (não só Outros)
+            const rawKey=String(deal[fieldMap[tipo]]||'').trim().slice(0,80)||'(vazio)';
+            const rawNorm=rawKey.toLowerCase();
+            if (!an.outrosRaw[tipo][legenda]) an.outrosRaw[tipo][legenda]={};
+            an.outrosRaw[tipo][legenda][rawNorm]=(an.outrosRaw[tipo][legenda][rawNorm]||0)+1;
           });
         }
       }
@@ -416,10 +417,13 @@ app.get('/api/report', async (req,res) => {
             const {outrosRaw,...tiposSemRaw}=tipos;
             const serialized=Object.fromEntries(Object.entries(tiposSemRaw).map(([tipo,legs])=>{
               const total=Object.values(legs).reduce((s,v)=>s+v,0);
-              const itens=Object.entries(legs).sort((a,b)=>b[1]-a[1]).map(([leg,v])=>({leg,v,pct:total>0?Math.round(v/total*100):0}));
-              // Adiciona detalhes de Outros
-              const rawItems=Object.entries(outrosRaw[tipo]||{}).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([raw,v])=>({raw,v}));
-              return [tipo, {itens, outrosRaw: rawItems}];
+              const itens=Object.entries(legs).sort((a,b)=>b[1]-a[1]).map(([leg,v])=>{
+                // Raw values para esta legenda específica
+                const rawMap=outrosRaw[tipo]?.[leg]||{};
+                const rawItems=Object.entries(rawMap).sort((a,b)=>b[1]-a[1]).slice(0,30).map(([raw,v])=>({raw,v}));
+                return {leg,v,pct:total>0?Math.round(v/total*100):0,rawItems};
+              });
+              return [tipo, {itens}];
             }));
             return [motivo, serialized];
           })
