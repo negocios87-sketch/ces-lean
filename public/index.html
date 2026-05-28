@@ -927,7 +927,7 @@ function renderAnalitica(){
 
   const dados = an?.[MOTIVO_AN];
   const totalMotivo = dados
-    ? Object.values(dados).reduce((s,arr)=>s+(arr.reduce((ss,x)=>ss+x.v,0)/4),0)
+    ? Object.values(dados).reduce((s,tipoData)=>s+((tipoData?.itens||[]).reduce((ss,x)=>ss+x.v,0)/4),0)
     : 0;
   // Conta real do motivo
   const countMotivo = pd.perdidos?.topMotivos?.find(m=>m.m===MOTIVO_AN)?.c || 0;
