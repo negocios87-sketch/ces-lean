@@ -855,15 +855,19 @@ function render(){
       </div>
     </div>
 
-    <!-- Motivos + Quando foi criado: LADO A LADO -->
-    <div class="side-row">
+    <!-- Motivos por time: 3 colunas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px" id="motivos-times-wrap">
       <div class="ccard">
-        <div class="ccard-ttl">Top motivos de perda · mês atual</div>
+        <div class="ccard-ttl">Top Motivos · Geral</div>
         <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
       </div>
-      <div class="ot-card">
-        <div class="ot-title">Quando foi criado o lead que foi perdido</div>
-        <div class="ot-rows">${otHtml(perdidos.origemTemporal,'#c0533a')}</div>
+      <div class="ccard">
+        <div class="ccard-ttl">Top Motivos · Time Diarley</div>
+        <div class="motivos" id="motivos-diarley" style="margin-top:4px"></div>
+      </div>
+      <div class="ccard">
+        <div class="ccard-ttl">Top Motivos · Time Denise</div>
+        <div class="motivos" id="motivos-denise" style="margin-top:4px"></div>
       </div>
     </div>
 
@@ -873,21 +877,26 @@ function render(){
     </div>
   `;
 
-  /* Motivos */
-  const motEl=document.getElementById('motivos-list');
+  /* Motivos — helper */
   const snapMotivos=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
-  motEl.innerHTML=perdidos.topMotivos.length
-    ?perdidos.topMotivos.map(m=>{
-        const snapM=snapMotivos.find(s=>s.m===m.m);
-        const snapPct=snapM?snapM.pct:null;
-        return`<div class="motivo-row">
-          <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
-          <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
-          <div class="motivo-pct">${m.pct}%</div>
-          <div class="motivo-count">${m.c}</div>
-          ${SNAP&&SNAP.data?ppDelta(m.pct,snapPct):''}
-        </div>`;}).join('')
-    :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados no período.</div>';
+  function renderMotivos(elId, items){
+    const el=document.getElementById(elId); if(!el)return;
+    el.innerHTML=items&&items.length
+      ?items.map(m=>{
+          const snapM=snapMotivos.find(s=>s.m===m.m);
+          const snapPct=snapM?snapM.pct:null;
+          return`<div class="motivo-row">
+            <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
+            <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
+            <div class="motivo-pct">${m.pct}%</div>
+            <div class="motivo-count">${m.c}</div>
+            ${SNAP&&SNAP.data?ppDelta(m.pct,snapPct):''}
+          </div>`;}).join('')
+      :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados.</div>';
+  }
+  renderMotivos('motivos-list',    perdidos.topMotivos);
+  renderMotivos('motivos-diarley', perdidos.motivosTimes?.['Time Diarley']?.top||[]);
+  renderMotivos('motivos-denise',  perdidos.motivosTimes?.['Time Denise']?.top||[]);
 
   /* Charts */
   mkStackedBar('ch-cri-dia',dLabels,[
