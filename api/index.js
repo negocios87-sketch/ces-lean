@@ -91,7 +91,7 @@ async function carregarRegrasScore() {
       const tipo=normalizarTexto(cols[0]);
       const contem=String(cols[1]||'').trim();
       const pontuacao=parsePontuacao(cols[2]);
-      const legenda=String(cols[3]||contem).trim();
+      const legenda=String(cols[4]||cols[3]||contem).trim();
       return {tipo,contem,contemNorm:normalizarTexto(contem),pontuacao,legenda};
     }).filter(r=>r.tipo&&r.pontuacao!==null);
   } catch(e) { console.warn('Score rules failed:',e.message); return []; }
