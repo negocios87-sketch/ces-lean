@@ -981,6 +981,44 @@ function renderAnalitica(){
       </div>
     </div>
 
+
+    <!-- Funis -->
+    <div class="sec-block" style="margin-top:0;margin-bottom:14px">
+      <div class="sec-eyebrow">Leads Criados · Data de Criação</div>
+      <div class="sec-title">Distribuição por Funil</div>
+      <div class="sec-divider ${divClass}"></div>
+    </div>
+
+    <div class="funis-wrap">
+      <div class="funis-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Funil</th><th>Leads</th><th>%</th>
+              ${(pd.criados.scoreFaixas||[]).map(f=>`<th style="font-size:.55rem;padding:7px 5px">${esc(f.label)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${(pd.criados.funis||[]).map(f=>`
+              <tr>
+                <td class="td-name">${esc(f.nome)}</td>
+                <td>${fmtN(f.t)}</td>
+                <td>${f.pct}%</td>
+                ${f.scoreFaixas.map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
+              </tr>`).join('')}
+          </tbody>
+          <tfoot><tr>
+            <td>Total</td><td>${fmtN(pd.criados.total)}</td><td>100%</td>
+            ${(pd.criados.scoreFaixas||[]).map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
+          </tr></tfoot>
+        </table>
+      </div>
+      <div class="funis-chart-wrap">
+        <div class="funis-chart-ttl">% de leads por funil</div>
+        <div class="funis-chart-canvas"><canvas id="ch-funis-rosca"></canvas></div>
+      </div>
+    </div>
+
     
 
     <div class="motivo-tog">
