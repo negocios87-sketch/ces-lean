@@ -104,9 +104,15 @@ function scorePorTipo(tipo, texto, regras) {
 }
 function legendaDoTipo(tipo, texto, regras) {
   const textoNorm=normalizarTexto(texto);
-  if (!textoNorm) return 'Não informado';
+  if (!textoNorm) {
+    // Usa legenda da linha com contem vazio se existir
+    const emptyMatch=regras.find(r=>r.tipo===tipo&&!r.contemNorm);
+    return { legenda: emptyMatch?(emptyMatch.legenda||'Não informado'):'Não informado', raw: null };
+  }
   const match=regras.find(r=>r.tipo===tipo&&r.contemNorm&&textoNorm.includes(r.contemNorm));
-  return match?(match.legenda||match.contem):'Outros';
+  if (match) return { legenda: match.legenda||match.contem, raw: null };
+  // Não bateu — Outros, guarda valor bruto
+  return { legenda: 'Outros', raw: String(texto||'').trim().slice(0,80) };
 }
 
 function calcularScore(deal, regras) {
@@ -206,8 +212,8 @@ app.get('/api/report', async (req,res) => {
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas(),
         analitica:{
-          'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{}},
-          'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{}},
+          'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
+          'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
         }
       }, sem:{} },
     });
@@ -337,10 +343,14 @@ app.get('/api/report', async (req,res) => {
         const motivosAnalitica=['Sem perfil','Sem interesse'];
         if (motivosAnalitica.includes(motivo)) {
           const an=dp.mes.analitica[motivo];
+          const fieldMap={renda:FIELD_RENDA,cargo:FIELD_CARGO,idade:FIELD_IDADE,escolaridade:FIELD_ESCOLARIDADE};
           ['renda','cargo','idade','escolaridade'].forEach(tipo=>{
-            const fieldMap={renda:FIELD_RENDA,cargo:FIELD_CARGO,idade:FIELD_IDADE,escolaridade:FIELD_ESCOLARIDADE};
-            const leg=legendaDoTipo(tipo,deal[fieldMap[tipo]],regrasScore);
-            an[tipo][leg]=(an[tipo][leg]||0)+1;
+            const {legenda,raw}=legendaDoTipo(tipo,deal[fieldMap[tipo]],regrasScore);
+            an[tipo][legenda]=(an[tipo][legenda]||0)+1;
+            if (raw) {
+              const rawNorm=raw.toLowerCase().trim();
+              an.outrosRaw[tipo][rawNorm]=(an.outrosRaw[tipo][rawNorm]||0)+1;
+            }
           });
         }
       }
@@ -402,14 +412,17 @@ app.get('/api/report', async (req,res) => {
         origemTemporal:origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
         scoreFaixas:serFaixas(p.perdidos.mes.scoreFaixas,p.perdidos.mes.t),
         analitica: Object.fromEntries(
-          Object.entries(p.perdidos.mes.analitica).map(([motivo,tipos])=>[motivo,
-            Object.fromEntries(Object.entries(tipos).map(([tipo,legs])=>{
+          Object.entries(p.perdidos.mes.analitica).map(([motivo,tipos])=>{
+            const {outrosRaw,...tiposSemRaw}=tipos;
+            const serialized=Object.fromEntries(Object.entries(tiposSemRaw).map(([tipo,legs])=>{
               const total=Object.values(legs).reduce((s,v)=>s+v,0);
-              return [tipo, Object.entries(legs)
-                .sort((a,b)=>b[1]-a[1])
-                .map(([leg,v])=>({leg,v,pct:total>0?Math.round(v/total*100):0}))];
-            }))
-          ])
+              const itens=Object.entries(legs).sort((a,b)=>b[1]-a[1]).map(([leg,v])=>({leg,v,pct:total>0?Math.round(v/total*100):0}));
+              // Adiciona detalhes de Outros
+              const rawItems=Object.entries(outrosRaw[tipo]||{}).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([raw,v])=>({raw,v}));
+              return [tipo, {itens, outrosRaw: rawItems}];
+            }));
+            return [motivo, serialized];
+          })
         ),
       },
     });
