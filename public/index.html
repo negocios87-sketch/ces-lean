@@ -1013,6 +1013,17 @@ function renderAnalitica(){
       </div>
     </div>
 
+
+    <!-- Etapas -->
+    <div class="sec-block" style="margin-bottom:14px">
+      <div class="sec-eyebrow">Leads Abertos · Etapa atual no funil</div>
+      <div class="sec-title">Distribuição por Etapa</div>
+      <div class="sec-divider ${PROD==='lean'?'div-lean':'div-ces'}"></div>
+    </div>
+    <div class="funis-table-wrap" style="margin-bottom:24px">
+      ${buildEtapasTable(pd.criados.funis||[], pd.criados.etapas||{}, 'et')}
+    </div>
+
     
 
     <div class="sec-block" style="margin-bottom:14px">
@@ -1193,10 +1204,16 @@ function switchGanhos(view){
 
 function toggleDeals(id){
   const row=document.getElementById(id);if(!row)return;
-  const parts=id.split('-');
-  const idx=parts[parts.length-1];
-  const prefix=parts.slice(0,-1).join('-');
-  const arrow=document.getElementById(prefix+'-arr-'+idx);
+  // Tenta arrow com padrão: id+'-arr' ou id.replace(id.split('-').pop(), 'arr-'+id.split('-').pop())
+  const arrowId = id+'-arr';
+  let arrow = document.getElementById(arrowId);
+  // Fallback: padrão antigo prefix-arr-idx
+  if(!arrow){
+    const parts=id.split('-');
+    const idx=parts[parts.length-1];
+    const prefix=parts.slice(0,-1).join('-');
+    arrow=document.getElementById(prefix+'-arr-'+idx);
+  }
   const open=row.style.display==='none'||row.style.display==='';
   row.style.display=open?'table-row':'none';
   if(arrow)arrow.textContent=open?'▼':'▶';
