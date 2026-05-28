@@ -253,20 +253,20 @@ app.get('/api/report', async (req,res) => {
         const score=calcularScore(deal,regrasScore);
         const faixa=faixaScore(score);
         if (faixa) dc.mes.scoreFaixas[faixa]=(dc.mes.scoreFaixas[faixa]||0)+1;
-        // Funil
+        // Funil — agrupa por time
         const pipeId=String(deal.pipeline_id||'');
-        const pipeName=pipelineMap[pipeId]||pipeId||'Desconhecido';
-        if (!dc.mes.funis[pipeName]) dc.mes.funis[pipeName]={t:0,scoreFaixas:emptyFaixas()};
-        dc.mes.funis[pipeName].t++;
-        if (faixa) dc.mes.funis[pipeName].scoreFaixas[faixa]=(dc.mes.funis[pipeName].scoreFaixas[faixa]||0)+1;
-        // Etapas (só abertos)
+        const timeName=classifyTime(deal.pipeline_id);
+        if (!dc.mes.funis[timeName]) dc.mes.funis[timeName]={t:0,scoreFaixas:emptyFaixas()};
+        dc.mes.funis[timeName].t++;
+        if (faixa) dc.mes.funis[timeName].scoreFaixas[faixa]=(dc.mes.funis[timeName].scoreFaixas[faixa]||0)+1;
+        // Etapas (só abertos) — agrupa por time
         if (deal.status==='open') {
           const stageId=String(deal.stage_id||'');
           const stageInfo=stageMap[stageId]||{name:stageId||'Desconhecida',order:999,pipeId:pipeId};
-          if (!dc.mes.etapas[pipeName]) dc.mes.etapas[pipeName]={};
+          if (!dc.mes.etapas[timeName]) dc.mes.etapas[timeName]={};
           const stageKey=stageInfo.name;
-          if (!dc.mes.etapas[pipeName][stageKey]) dc.mes.etapas[pipeName][stageKey]={t:0,order:stageInfo.order};
-          dc.mes.etapas[pipeName][stageKey].t++;
+          if (!dc.mes.etapas[timeName][stageKey]) dc.mes.etapas[timeName][stageKey]={t:0,order:stageInfo.order};
+          dc.mes.etapas[timeName][stageKey].t++;
         }
         // Produtos vendidos
         const val=parseFloat(deal.value||0);
