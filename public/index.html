@@ -128,6 +128,23 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .pfooter{margin-top:32px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
 .pfooter span{font-size:.67rem;color:var(--muted)}
 
+/* ── ABA ANALÍTICA ── */
+#pageAnalitica{display:none}
+.an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.an-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.an-card-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.an-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.an-lbl{flex:1;font-size:.78rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-track{width:60px;flex-shrink:0;background:var(--border);border-radius:3px;height:5px}
+.an-fill{height:5px;border-radius:3px;transition:width .5s}
+.an-val{width:28px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
+.an-pct{width:32px;text-align:right;font-size:.7rem;color:var(--muted)}
+.motivo-tog{display:flex;gap:6px;margin-bottom:18px}
+.mtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
+.mtog:hover{border-color:var(--navy);color:var(--navy)}
+.mtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
+@media(max-width:900px){.an-grid{grid-template-columns:1fr 1fr}}
+
 @media(max-width:900px){
   .kpi5,.kpi3{grid-template-columns:1fr 1fr}
   .charts-2,.side-row{grid-template-columns:1fr}
@@ -212,6 +229,11 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
       <button class="ptog lean" id="togLean" onclick="setProduct('lean')">LEAN</button>
       <button class="ptog"      id="togCes"  onclick="setProduct('ces')">CES</button>
     </div>
+    <div class="tb-sep"></div>
+    <div style="display:flex;gap:3px;padding:10px 0">
+      <button class="ptog" id="tabMain"     onclick="setTab('main')"     style="background:rgba(255,255,255,.15);color:#fff">Dashboard</button>
+      <button class="ptog" id="tabAnalitica" onclick="setTab('analitica')" style="">Analítica</button>
+    </div>
   </div>
   <div class="tb-right">
     <select id="selMes" onchange="onMesChange()" style="background:#2d4459;border:1px solid rgba(255,255,255,.18);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:6px 10px;cursor:pointer;outline:none"></select>
@@ -257,6 +279,16 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
   </div>
 </div>
 
+<div id="pageAnalitica">
+  <div class="page">
+    <div class="errbanner" id="errBannerAn"></div>
+    <div id="contentAnalitica">
+      <div class="state-wrap"><div class="spinner"></div><span>Carregando…</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="pageMain">
 <div class="page">
   <div class="errbanner" id="errBanner"></div>
   <div id="content">
@@ -853,7 +885,93 @@ function render(){
   mkScoreLine('ch-perd-score',perdidos.scoreFaixas||[],'#c0533a',snapScorePerd.length?snapScorePerd:null);
 }
 
-function setProduct(p){PROD=p;if(DATA)render();}
+function setProduct(p){PROD=p;if(DATA){render();renderAnalitica();}}
+
+/* ── Tabs ── */
+let TAB = 'main';
+function setTab(t){
+  TAB=t;
+  document.getElementById('pageMain').style.display      = t==='main'      ?'block':'none';
+  document.getElementById('pageAnalitica').style.display = t==='analitica' ?'block':'none';
+  document.getElementById('tabMain').style.background      = t==='main'      ?'rgba(255,255,255,.15)':'';
+  document.getElementById('tabMain').style.color            = t==='main'      ?'#fff':'';
+  document.getElementById('tabAnalitica').style.background  = t==='analitica' ?'rgba(255,255,255,.15)':'';
+  document.getElementById('tabAnalitica').style.color       = t==='analitica' ?'#fff':'';
+  if(t==='analitica'&&DATA) renderAnalitica();
+}
+
+/* ── Analítica ── */
+let MOTIVO_AN = 'Sem perfil';
+
+function renderAnalitica(){
+  if(!DATA) return;
+  const pd = DATA[PROD];
+  if(!pd){ document.getElementById('contentAnalitica').innerHTML='<div class="state-wrap"><span>Sem dados.</span></div>'; return; }
+
+  const col  = PROD==='lean'?'#4a6fa5':'#0e7490';
+  const lbl  = PROD==='lean'?'Lean Governance':'CES';
+  const mes  = fmtM(DATA.mes);
+  const an   = pd.perdidos?.analitica;
+  const totPerdidos = pd.perdidos?.total||0;
+
+  const dados = an?.[MOTIVO_AN];
+  const totalMotivo = dados
+    ? Object.values(dados).reduce((s,arr)=>s+(arr.reduce((ss,x)=>ss+x.v,0)/4),0)
+    : 0;
+  // Conta real do motivo
+  const countMotivo = pd.perdidos?.topMotivos?.find(m=>m.m===MOTIVO_AN)?.c || 0;
+
+  function anCard(titulo, items, col2){
+    if(!items||!items.length) return `<div class="an-card"><div class="an-card-title">${titulo}</div><div style="color:var(--muted);font-size:.8rem">Sem dados</div></div>`;
+    const maxV = Math.max(...items.map(x=>x.v),1);
+    return `<div class="an-card">
+      <div class="an-card-title">${titulo}</div>
+      ${items.map(x=>`
+        <div class="an-row">
+          <div class="an-lbl" title="${esc(x.leg)}">${esc(x.leg)}</div>
+          <div class="an-track"><div class="an-fill" style="width:${Math.round(x.v/maxV*100)}%;background:${col2}"></div></div>
+          <div class="an-val">${fmtN(x.v)}</div>
+          <div class="an-pct">${x.pct}%</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  document.getElementById('contentAnalitica').innerHTML = `
+    <div class="ph-row">
+      <div>
+        <div class="ph-eye">Board Academy · Analítica</div>
+        <div class="ph-ttl">${lbl} · ${mes}</div>
+        <div class="ph-sub">Perfil dos leads perdidos por dimensão de score</div>
+      </div>
+    </div>
+
+    <div class="sec-block">
+      <div class="sec-eyebrow">Perdidos no mês · Data de Perda</div>
+      <div class="sec-title">Perfil por Motivo de Perda
+        <span class="sec-date-tag tag-perda">${fmtN(totPerdidos)} perdidos no total</span>
+        <span class="sec-date-tag" style="background:#f5e9d6;color:#8c6428">${fmtN(countMotivo)} com "${MOTIVO_AN}"</span>
+      </div>
+      <div class="sec-divider div-perda"></div>
+    </div>
+
+    <div class="motivo-tog">
+      <button class="mtog ${MOTIVO_AN==='Sem perfil'?'active':''}"    onclick="setMotivoAn('Sem perfil')">Sem Perfil</button>
+      <button class="mtog ${MOTIVO_AN==='Sem interesse'?'active':''}" onclick="setMotivoAn('Sem interesse')">Sem Interesse</button>
+    </div>
+
+    <div class="an-grid">
+      ${anCard('Renda',          dados?.renda,        col)}
+      ${anCard('Cargo',          dados?.cargo,        col)}
+      ${anCard('Idade',          dados?.idade,        col)}
+      ${anCard('Escolaridade',   dados?.escolaridade, col)}
+    </div>
+  `;
+}
+
+function setMotivoAn(m){
+  MOTIVO_AN=m;
+  renderAnalitica();
+}
 
 function switchGanhos(view){
   const isProd=view==='prod';
@@ -1331,7 +1449,7 @@ async function loadData(){
     const r=await fetch(`/api/report?mes=${MES_FILTRO||''}`);
     const j=await r.json();
     if(!j.ok)throw new Error(j.error);
-    DATA=j;render();updateCmpBtn();
+    DATA=j;render();renderAnalitica();updateCmpBtn();
   }catch(e){
     err.textContent=`Erro ao carregar: ${e.message}`;
     err.style.display='block';
@@ -1350,6 +1468,8 @@ async function doRefresh(){
 buildMesSelector();
 loadData();
 </script>
+
+</div></div><!-- fim pageMain -->
 
 <!-- ════ FERRAMENTAS DE APRESENTAÇÃO ════
      L=Laser  A=Seta  C=Caneta  S=Spotlight  Z=Zoom ════ -->
