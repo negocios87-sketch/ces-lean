@@ -1046,6 +1046,41 @@ function renderAnalitica(){
       ${anCard('Idade',        dados?.idade,        col)}
       ${anCard('Escolaridade', dados?.escolaridade, col)}
     </div>
+
+    <!-- Perdidos na Negociação -->
+    <div class="sec-block" style="margin-bottom:14px">
+      <div class="sec-eyebrow">Eixo temporal · Data de Perda · Etapa: Negociação</div>
+      <div class="sec-title">Perdidos na Negociação
+        <span class="sec-date-tag tag-perda">${fmtN(pd.perdidos?.negociacao?.length||0)} deals</span>
+      </div>
+      <div class="sec-divider div-perda"></div>
+    </div>
+
+    ${pd.perdidos?.negociacao?.length ? `
+    <div class="funis-table-wrap" style="margin-bottom:24px">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th style="text-align:left">Título</th>
+            <th style="text-align:left">Owner</th>
+            <th style="text-align:left">Motivo de Perda</th>
+            <th>Data Perda</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pd.perdidos.negociacao.map(d=>`
+            <tr>
+              <td><a href="https://boardacademy.pipedrive.com/deal/${d.id}" target="_blank" style="color:var(--lean);font-weight:600;text-decoration:none">#${d.id}</a></td>
+              <td style="text-align:left">${esc(d.title)}</td>
+              <td style="text-align:left;color:var(--muted)">${esc(d.owner)}</td>
+              <td style="text-align:left">${esc(d.motivo)}</td>
+              <td>${d.dataPerda}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : '<div style="color:var(--muted);font-size:.82rem;padding:12px 0">Nenhum lead perdido na etapa de Negociação no período.</div>'}
+
   `;
   setTimeout(()=>renderFunisChart(pd?.criados?.funis||[],col),50);
 }
@@ -1204,19 +1239,18 @@ function switchGanhos(view){
 
 function toggleDeals(id){
   const row=document.getElementById(id);if(!row)return;
-  // Tenta arrow com padrão: id+'-arr' ou id.replace(id.split('-').pop(), 'arr-'+id.split('-').pop())
-  const arrowId = id+'-arr';
-  let arrow = document.getElementById(arrowId);
-  // Fallback: padrão antigo prefix-arr-idx
+  // Arrow: busca span com id = id+'-arr' (padrão novo)
+  // ou prefixo-arr-sufixo (padrão antigo das tabelas de campanha)
+  let arrow=document.getElementById(id+'-arr');
   if(!arrow){
     const parts=id.split('-');
     const idx=parts[parts.length-1];
     const prefix=parts.slice(0,-1).join('-');
     arrow=document.getElementById(prefix+'-arr-'+idx);
   }
-  const open=row.style.display==='none'||row.style.display==='';
-  row.style.display=open?'table-row':'none';
-  if(arrow)arrow.textContent=open?'▼':'▶';
+  const isHidden=row.style.display==='none'||row.style.display==='';
+  row.style.display=isHidden?'table-row':'none';
+  if(arrow)arrow.textContent=isHidden?'▼':'▶';
 }
 
 
