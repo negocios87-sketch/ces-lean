@@ -91,7 +91,8 @@ async function carregarRegrasScore() {
       const tipo=normalizarTexto(cols[0]);
       const contem=String(cols[1]||'').trim();
       const pontuacao=parsePontuacao(cols[2]);
-      return {tipo,contem,contemNorm:normalizarTexto(contem),pontuacao};
+      const legenda=String(cols[3]||contem).trim();
+      return {tipo,contem,contemNorm:normalizarTexto(contem),pontuacao,legenda};
     }).filter(r=>r.tipo&&r.pontuacao!==null);
   } catch(e) { console.warn('Score rules failed:',e.message); return []; }
 }
@@ -101,6 +102,13 @@ function scorePorTipo(tipo, texto, regras) {
   const match=regras.find(r=>r.tipo===tipo&&r.contemNorm&&textoNorm.includes(r.contemNorm));
   return match?match.pontuacao:(SCORE_DEFAULTS[tipo]||0);
 }
+function legendaDoTipo(tipo, texto, regras) {
+  const textoNorm=normalizarTexto(texto);
+  if (!textoNorm) return 'Não informado';
+  const match=regras.find(r=>r.tipo===tipo&&r.contemNorm&&textoNorm.includes(r.contemNorm));
+  return match?(match.legenda||match.contem):'Outros';
+}
+
 function calcularScore(deal, regras) {
   return +(
     scorePorTipo('renda',       deal[FIELD_RENDA],       regras)+
@@ -196,7 +204,12 @@ app.get('/api/report', async (req,res) => {
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas()}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
-      perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas()}, sem:{} },
+      perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas(),
+        analitica:{
+          'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{}},
+          'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{}},
+        }
+      }, sem:{} },
     });
     const D={LEAN:empty(),CES:empty()};
 
@@ -320,6 +333,16 @@ app.get('/api/report', async (req,res) => {
         const score=calcularScore(deal,regrasScore);
         const faixa=faixaScore(score);
         if (faixa) dp.mes.scoreFaixas[faixa]=(dp.mes.scoreFaixas[faixa]||0)+1;
+        // Analítica: só para Sem perfil e Sem interesse
+        const motivosAnalitica=['Sem perfil','Sem interesse'];
+        if (motivosAnalitica.includes(motivo)) {
+          const an=dp.mes.analitica[motivo];
+          ['renda','cargo','idade','escolaridade'].forEach(tipo=>{
+            const fieldMap={renda:FIELD_RENDA,cargo:FIELD_CARGO,idade:FIELD_IDADE,escolaridade:FIELD_ESCOLARIDADE};
+            const leg=legendaDoTipo(tipo,deal[fieldMap[tipo]],regrasScore);
+            an[tipo][leg]=(an[tipo][leg]||0)+1;
+          });
+        }
       }
       if (wSet.has(_w)) dp.sem[_w]=(dp.sem[_w]||0)+1;
     }
@@ -378,6 +401,16 @@ app.get('/api/report', async (req,res) => {
         topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
         origemTemporal:origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
         scoreFaixas:serFaixas(p.perdidos.mes.scoreFaixas,p.perdidos.mes.t),
+        analitica: Object.fromEntries(
+          Object.entries(p.perdidos.mes.analitica).map(([motivo,tipos])=>[motivo,
+            Object.fromEntries(Object.entries(tipos).map(([tipo,legs])=>{
+              const total=Object.values(legs).reduce((s,v)=>s+v,0);
+              return [tipo, Object.entries(legs)
+                .sort((a,b)=>b[1]-a[1])
+                .map(([leg,v])=>({leg,v,pct:total>0?Math.round(v/total*100):0}))];
+            }))
+          ])
+        ),
       },
     });
 
