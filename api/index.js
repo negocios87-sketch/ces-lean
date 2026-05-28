@@ -32,6 +32,18 @@ const SCORE_FAIXAS = [
 ];
 
 const LEAN_IDS = new Set(['22395618474','22402104677','22406191339']);
+
+// Classificação de times por pipeline
+const TIMES = {
+  'Time Diarley': new Set([39]),
+  'Time Denise':  new Set([46,51,87,88]),
+};
+function classifyTime(pipeId){
+  const id = parseInt(pipeId)||0;
+  if (TIMES['Time Diarley'].has(id)) return 'Time Diarley';
+  if (TIMES['Time Denise'].has(id))  return 'Time Denise';
+  return 'Outros';
+}
 const CES_IDS  = new Set(['22734871401','23367012467']);
 
 // ── Classificações ────────────────────────────────────────────
@@ -215,7 +227,7 @@ app.get('/api/report', async (req,res) => {
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
-      perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
+      perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
         analitica:{
           'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
           'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
@@ -351,9 +363,11 @@ app.get('/api/report', async (req,res) => {
       if (_ym===curYM) {
         const _d=toYMD(deal.lost_time);
         const motivo=deal.lost_reason?.trim()||'Não informado';
+        const timeNome=classifyTime(deal.pipeline_id);
         dp.mes.t++;
         dp.mes.dia[_d]=(dp.mes.dia[_d]||0)+1;
         dp.mes.motivos[motivo]=(dp.mes.motivos[motivo]||0)+1;
+        dp.mes.motivosTimes[timeNome][motivo]=(dp.mes.motivosTimes[timeNome][motivo]||0)+1;
         dp.mes.origTemporal[tempCat]=(dp.mes.origTemporal[tempCat]||0)+1;
         // Perdidos na etapa NEGOCIAÇÃO
         const stageIdP=String(deal.stage_id||'');
@@ -457,6 +471,15 @@ app.get('/api/report', async (req,res) => {
         porDia:   allDays.map(d=>({d,v:p.perdidos.mes.dia[d]||0})),
         porSemana:weeks.map(w=>({w,v:p.perdidos.sem[w]||0})),
         topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
+        motivosTimes: Object.fromEntries(
+          Object.entries(p.perdidos.mes.motivosTimes).map(([time,motivos])=>{
+            const tot=Object.values(motivos).reduce((s,v)=>s+v,0);
+            return [time, {
+              total: tot,
+              top: Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:tot?Math.round(c/tot*100):0}))
+            }];
+          })
+        ),
         origemTemporal:origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
         negociacao: p.perdidos.mes.negociacao.sort((a,b)=>b.dataPerda.localeCompare(a.dataPerda)),
         scoreFaixas:serFaixas(p.perdidos.mes.scoreFaixas,p.perdidos.mes.t),
