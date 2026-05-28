@@ -999,13 +999,7 @@ function renderAnalitica(){
             </tr>
           </thead>
           <tbody>
-            ${(pd.criados.funis||[]).map(f=>`
-              <tr>
-                <td class="td-name">${esc(f.nome)}</td>
-                <td>${fmtN(f.t)}</td>
-                <td>${f.pct}%</td>
-                ${f.scoreFaixas.map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
-              </tr>`).join('')}
+            ${buildFunisRows(pd.criados.funis||[], 'fn', pd.criados.scoreFaixas)}
           </tbody>
           <tfoot><tr>
             <td>Total</td><td>${fmtN(pd.criados.total)}</td><td>100%</td>
@@ -1020,6 +1014,15 @@ function renderAnalitica(){
     </div>
 
     
+
+    <div class="sec-block" style="margin-bottom:14px">
+      <div class="sec-eyebrow">Perdidos no mês · Data de Perda</div>
+      <div class="sec-title">Perfil por Motivo de Perda
+        <span class="sec-date-tag tag-perda">${fmtN(totPerdidos)} perdidos no total</span>
+        <span class="sec-date-tag" style="background:#f5e9d6;color:#8c6428">${fmtN(countMotivo)} com "${MOTIVO_AN}"</span>
+      </div>
+      <div class="sec-divider div-perda"></div>
+    </div>
 
     <div class="motivo-tog">
       <button class="mtog ${MOTIVO_AN==='Sem perfil'?'active':''}"    onclick="setMotivoAn('Sem perfil')">Sem Perfil</button>
@@ -1036,6 +1039,107 @@ function renderAnalitica(){
   setTimeout(()=>renderFunisChart(pd?.criados?.funis||[],col),50);
 }
 
+
+/* Consolida funis < 10 em Outros expansível */
+function buildFunisRows(funis, prefix, scoreFaixas){
+  const MIN = 10;
+  const grandes = funis.filter(f=>f.t >= MIN);
+  const pequenos = funis.filter(f=>f.t < MIN);
+  let rows = grandes.map(f=>`
+    <tr>
+      <td class="td-name">${esc(f.nome)}</td>
+      <td>${fmtN(f.t)}</td>
+      <td>${f.pct}%</td>
+      ${(f.scoreFaixas||[]).map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
+    </tr>`).join('');
+
+  if(pequenos.length){
+    const totPeq = pequenos.reduce((s,f)=>s+f.t,0);
+    const totGeral = funis.reduce((s,f)=>s+f.t,0);
+    const pctPeq = totGeral>0?Math.round(totPeq/totGeral*100):0;
+    // Agrega scoreFaixas dos pequenos
+    const aggScore = scoreFaixas ? scoreFaixas.map((_,i)=>({v:pequenos.reduce((s,f)=>s+(f.scoreFaixas?.[i]?.v||0),0)})) : [];
+    const detalhes = pequenos.map(f=>`
+      <tr style="background:var(--bg)">
+        <td style="padding-left:28px;font-size:.76rem;color:var(--muted)">${esc(f.nome)}</td>
+        <td style="font-size:.76rem">${fmtN(f.t)}</td>
+        <td style="font-size:.76rem">${f.pct}%</td>
+        ${(f.scoreFaixas||[]).map(s=>`<td style="font-size:.72rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
+      </tr>`).join('');
+
+    rows += `
+    <tr class="ori-row" onclick="toggleDeals('${prefix}-outros')" style="cursor:pointer">
+      <td class="td-name"><span id="${prefix}-outros-arr">▶</span> Outros (${pequenos.length} funis)</td>
+      <td>${fmtN(totPeq)}</td>
+      <td>${pctPeq}%</td>
+      ${aggScore.map(s=>`<td style="font-size:.75rem;text-align:right">${s.v>0?fmtN(s.v):''}</td>`).join('')}
+    </tr>
+    <tr id="${prefix}-outros" style="display:none">
+      <td colspan="${3+(scoreFaixas?.length||0)}" style="padding:0">${detalhes}</td>
+    </tr>`;
+  }
+  return rows;
+}
+
+function buildEtapasTable(funis, etapas, prefix){
+  const MIN = 10;
+  const grandes = funis.filter(f=>f.t >= MIN);
+  const pequenos = funis.filter(f=>f.t < MIN);
+
+  // Coleta todas as etapas únicas em ordem
+  const etapasSet = new Map();
+  grandes.forEach(f=>{
+    (etapas[f.nome]||[]).forEach(e=>{
+      if(!etapasSet.has(e.nome)) etapasSet.set(e.nome,{order:etapasSet.size});
+    });
+  });
+  const etapasCols = [...etapasSet.keys()];
+
+  if(!etapasCols.length) return '<div style="color:var(--muted);font-size:.8rem;padding:14px">Sem leads abertos no período.</div>';
+
+  let rows = grandes.map(f=>{
+    const etapasFunil = Object.fromEntries((etapas[f.nome]||[]).map(e=>[e.nome,e.t]));
+    const totalAberto = Object.values(etapasFunil).reduce((s,v)=>s+v,0);
+    return `<tr>
+      <td class="td-name">${esc(f.nome)}</td>
+      <td>${fmtN(totalAberto)}</td>
+      ${etapasCols.map(e=>`<td style="font-size:.75rem;text-align:right">${etapasFunil[e]>0?fmtN(etapasFunil[e]):''}</td>`).join('')}
+    </tr>`;
+  }).join('');
+
+  // Outros (pequenos)
+  if(pequenos.length){
+    const aggEtapas = {};
+    pequenos.forEach(f=>(etapas[f.nome]||[]).forEach(e=>{aggEtapas[e.nome]=(aggEtapas[e.nome]||0)+e.t;}));
+    const totPeq = Object.values(aggEtapas).reduce((s,v)=>s+v,0);
+    const detalheRows = pequenos.map(f=>{
+      const ef = Object.fromEntries((etapas[f.nome]||[]).map(e=>[e.nome,e.t]));
+      const tot = Object.values(ef).reduce((s,v)=>s+v,0);
+      return `<tr style="background:var(--bg)">
+        <td style="padding-left:28px;font-size:.76rem;color:var(--muted)">${esc(f.nome)}</td>
+        <td style="font-size:.76rem">${fmtN(tot)}</td>
+        ${etapasCols.map(e=>`<td style="font-size:.72rem;text-align:right">${ef[e]>0?fmtN(ef[e]):''}</td>`).join('')}
+      </tr>`;
+    }).join('');
+    rows += `
+    <tr class="ori-row" onclick="toggleDeals('${prefix}-et-outros')" style="cursor:pointer">
+      <td class="td-name"><span id="${prefix}-et-outros-arr">▶</span> Outros (${pequenos.length} funis)</td>
+      <td>${fmtN(totPeq)}</td>
+      ${etapasCols.map(e=>`<td style="font-size:.75rem;text-align:right">${aggEtapas[e]>0?fmtN(aggEtapas[e]):''}</td>`).join('')}
+    </tr>
+    <tr id="${prefix}-et-outros" style="display:none">
+      <td colspan="${2+etapasCols.length}" style="padding:0">${detalheRows}</td>
+    </tr>`;
+  }
+
+  return `<table>
+    <thead><tr>
+      <th>Funil</th><th>Abertos</th>
+      ${etapasCols.map(e=>`<th style="font-size:.55rem;padding:7px 5px">${esc(e)}</th>`).join('')}
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
 
 function renderFunisChart(funis, col){
   dk('ch-funis-rosca');
