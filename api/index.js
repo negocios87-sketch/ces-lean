@@ -215,7 +215,7 @@ app.get('/api/report', async (req,res) => {
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
-      perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas(),
+      perdidos:{ mes:{t:0,dia:{},motivos:{},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
         analitica:{
           'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
           'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
@@ -355,6 +355,18 @@ app.get('/api/report', async (req,res) => {
         dp.mes.dia[_d]=(dp.mes.dia[_d]||0)+1;
         dp.mes.motivos[motivo]=(dp.mes.motivos[motivo]||0)+1;
         dp.mes.origTemporal[tempCat]=(dp.mes.origTemporal[tempCat]||0)+1;
+        // Perdidos na etapa NEGOCIAÇÃO
+        const stageIdP=String(deal.stage_id||'');
+        const stageInfoP=stageMap[stageIdP];
+        if (stageInfoP&&/negoci/i.test(stageInfoP.name)) {
+          dp.mes.negociacao.push({
+            id:    deal.id,
+            title: deal.title||'—',
+            owner: deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            motivo,
+            dataPerda: _d,
+          });
+        }
         // Score dos perdidos
         const score=calcularScore(deal,regrasScore);
         const faixa=faixaScore(score);
@@ -446,6 +458,7 @@ app.get('/api/report', async (req,res) => {
         porSemana:weeks.map(w=>({w,v:p.perdidos.sem[w]||0})),
         topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
         origemTemporal:origTemporalSer(p.perdidos.mes.origTemporal,p.perdidos.mes.t),
+        negociacao: p.perdidos.mes.negociacao.sort((a,b)=>b.dataPerda.localeCompare(a.dataPerda)),
         scoreFaixas:serFaixas(p.perdidos.mes.scoreFaixas,p.perdidos.mes.t),
         analitica: Object.fromEntries(
           Object.entries(p.perdidos.mes.analitica).map(([motivo,tipos])=>{
