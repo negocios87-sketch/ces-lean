@@ -140,6 +140,17 @@ tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
 .an-val{width:28px;text-align:right;font-size:.78rem;font-weight:700;color:var(--navy)}
 .an-pct{width:32px;text-align:right;font-size:.7rem;color:var(--muted)}
 .motivo-tog{display:flex;gap:6px;margin-bottom:18px}
+.an-grid{align-items:start}
+.an-card{height:100%;display:flex;flex-direction:column}
+.an-rows{flex:1}
+.outros-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;margin-top:4px;color:var(--muted);font-size:.72rem;font-weight:600;border:none;background:none;font-family:'DM Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.outros-toggle:hover{color:var(--navy)}
+.outros-detail{display:none;margin-top:6px;border-top:1px solid var(--border);padding-top:8px}
+.outros-detail.open{display:block}
+.outros-item{display:flex;justify-content:space-between;padding:3px 0;font-size:.72rem;border-bottom:1px solid var(--border)}
+.outros-item:last-child{border-bottom:none}
+.outros-item-lbl{color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}
+.outros-item-val{font-weight:600;color:var(--navy);flex-shrink:0}
 .mtog{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 18px;cursor:pointer;transition:all .15s}
 .mtog:hover{border-color:var(--navy);color:var(--navy)}
 .mtog.active{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -921,21 +932,40 @@ function renderAnalitica(){
   // Conta real do motivo
   const countMotivo = pd.perdidos?.topMotivos?.find(m=>m.m===MOTIVO_AN)?.c || 0;
 
-  function anCard(titulo, items, col2){
-    if(!items||!items.length) return `<div class="an-card"><div class="an-card-title">${titulo}</div><div style="color:var(--muted);font-size:.8rem">Sem dados</div></div>`;
+  let anCardCount = 0;
+  function anCard(titulo, tipoData, col2){
+    const items    = tipoData?.itens || [];
+    const rawItems = tipoData?.outrosRaw || [];
+    const cardId   = 'ancard-'+(anCardCount++);
+    if(!items.length) return `<div class="an-card"><div class="an-card-title">${titulo}</div><div style="color:var(--muted);font-size:.8rem;padding:8px 0">Sem dados</div></div>`;
     const maxV = Math.max(...items.map(x=>x.v),1);
-    return `<div class="an-card">
-      <div class="an-card-title">${titulo}</div>
-      ${items.map(x=>`
+    const rows = items.map(x=>{
+      const isOutros = x.leg==='Outros';
+      const hasRaw   = isOutros && rawItems.length>0;
+      return `<div>
         <div class="an-row">
           <div class="an-lbl" title="${esc(x.leg)}">${esc(x.leg)}</div>
           <div class="an-track"><div class="an-fill" style="width:${Math.round(x.v/maxV*100)}%;background:${col2}"></div></div>
           <div class="an-val">${fmtN(x.v)}</div>
           <div class="an-pct">${x.pct}%</div>
-        </div>`).join('')}
-    </div>`;
+        </div>
+        ${hasRaw?`
+          <button class="outros-toggle" onclick="toggleOutros('${cardId}')">
+            <span id="${cardId}-arr">▶</span> ver detalhes
+          </button>
+          <div class="outros-detail" id="${cardId}">
+            ${rawItems.map(r=>`
+              <div class="outros-item">
+                <span class="outros-item-lbl" title="${esc(r.raw)}">${esc(r.raw||'—')}</span>
+                <span class="outros-item-val">${r.v}</span>
+              </div>`).join('')}
+          </div>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="an-card"><div class="an-card-title">${titulo}</div><div class="an-rows">${rows}</div></div>`;
   }
 
+  anCardCount = 0;
   document.getElementById('contentAnalitica').innerHTML = `
     <div class="ph-row">
       <div>
@@ -960,12 +990,20 @@ function renderAnalitica(){
     </div>
 
     <div class="an-grid">
-      ${anCard('Renda',          dados?.renda,        col)}
-      ${anCard('Cargo',          dados?.cargo,        col)}
-      ${anCard('Idade',          dados?.idade,        col)}
-      ${anCard('Escolaridade',   dados?.escolaridade, col)}
+      ${anCard('Renda',        dados?.renda,        col)}
+      ${anCard('Cargo',        dados?.cargo,        col)}
+      ${anCard('Idade',        dados?.idade,        col)}
+      ${anCard('Escolaridade', dados?.escolaridade, col)}
     </div>
   `;
+}
+
+function toggleOutros(id){
+  const el  = document.getElementById(id);
+  const arr = document.getElementById(id+'-arr');
+  if(!el) return;
+  const open = el.classList.toggle('open');
+  if(arr) arr.textContent = open ? '▼' : '▶';
 }
 
 function setMotivoAn(m){
