@@ -265,6 +265,17 @@ app.get('/api/report', async (req,res) => {
     });
     const D={LEAN:empty(),CES:empty()};
 
+    // Set de IDs de ganhos válidos (após filtros de valor, Matheus Paz, etc.)
+    const ganhoValidoIds = new Set();
+    for (const deal of dealsGanhos) {
+      if (deal.status!=='won'||!deal.won_time) continue;
+      const val=parseFloat(deal.value||0)||0;
+      if (val<=0||!isFinite(val)) continue;
+      const owner=(deal.owner_name||(deal.user_id&&deal.user_id.name)||'').toLowerCase();
+      if (owner.includes('matheus paz')) continue;
+      ganhoValidoIds.add(deal.id);
+    }
+
     // ── CRIADOS ───────────────────────────────────────────────
     for (const deal of dealsCriados) {
       const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
@@ -276,7 +287,8 @@ app.get('/api/report', async (req,res) => {
         dc.mes.t++;
         dc.mes.dia[_d]=(dc.mes.dia[_d]||0)+1;
         if (deal.status==='open')  {dc.mes.st.a++;dc.mes.diaA[_d]=(dc.mes.diaA[_d]||0)+1;}
-        if (deal.status==='won')   {dc.mes.st.g++;dc.mes.diaG[_d]=(dc.mes.diaG[_d]||0)+1;}
+        // Ganho válido: só conta se está no filtro de ganhos e passou todos os filtros
+        if (deal.status==='won'&&ganhoValidoIds.has(deal.id)) {dc.mes.st.g++;dc.mes.diaG[_d]=(dc.mes.diaG[_d]||0)+1;}
         if (deal.status==='lost')  {dc.mes.st.p++;dc.mes.diaP[_d]=(dc.mes.diaP[_d]||0)+1;}
         // Score
         const score=calcularScore(deal,regrasScore);
@@ -545,6 +557,54 @@ app.get('/api/report', async (req,res) => {
   }
 });
 
+
+// ── DEBUG ganhos criados ─────────────────────────────────────
+app.get('/api/debug-ganhos-criados', async (req,res) => {
+  if (!API_TOKEN) return res.status(500).json({ok:false});
+  try {
+    const paramMes = req.query.mes || new Date().toISOString().substring(0,7);
+    const [dealsCriados, dealsGanhos] = await Promise.all([
+      fetchByFilter(FILTER_CRIADOS),
+      fetchByFilter(FILTER_GANHOS),
+    ]);
+
+    // Monta set de ganhos válidos
+    const ganhoValidoIds = new Set();
+    for (const deal of dealsGanhos) {
+      if (deal.status!=='won'||!deal.won_time) continue;
+      const val=parseFloat(deal.value||0)||0;
+      if (val<=0||!isFinite(val)) continue;
+      const owner=(deal.owner_name||(deal.user_id&&deal.user_id.name)||'').toLowerCase();
+      if (owner.includes('matheus paz')) continue;
+      ganhoValidoIds.add(deal.id);
+    }
+
+    const CAMP_FIELD = 'ae03fa460a108b8cdfa87e97ebca24379d2779d6';
+    const LEAN_IDS = new Set(['22395618474','22402104677','22406191339']);
+    const CES_IDS  = new Set(['22734871401','23367012467']);
+
+    const resultado = dealsCriados.filter(d=>{
+      if (d.status!=='won') return false;
+      if (!ganhoValidoIds.has(d.id)) return false;
+      const addYM = d.add_time?.substring(0,7);
+      if (addYM !== paramMes) return false;
+      // Só campanha CES
+      const s = String(d[CAMP_FIELD]||'').trim();
+      return CES_IDS.has(s) || (/ces/i.test(s) && !/ascesso/i.test(s));
+    }).map(d=>({
+      id: d.id,
+      titulo: d.title,
+      add_time: d.add_time?.substring(0,10),
+      won_time: d.won_time?.substring(0,10),
+      campanha: String(d[CAMP_FIELD]||'—'),
+      owner: d.owner_name||(d.user_id&&d.user_id.name)||'—',
+      valor: parseFloat(d.value||0),
+      emGanhoValido: ganhoValidoIds.has(d.id),
+    }));
+
+    res.json({ok:true, total:resultado.length, mes:paramMes, resultado});
+  } catch(e){ res.status(500).json({ok:false,error:e.message}); }
+});
 
 // ── DEBUG funis ──────────────────────────────────────────────
 app.get('/api/debug-funis', async (req,res) => {
