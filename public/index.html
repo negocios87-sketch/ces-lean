@@ -146,6 +146,16 @@ tr.outros-hidden{display:none!important}
 .funis-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
 .funis-chart-ttl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .funis-chart-canvas{position:relative;height:240px}
+.turmas-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.turma-row{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:.78rem}
+.turma-row:last-child{border-bottom:none}
+.turma-num{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--navy)}
+.turma-data{font-size:.69rem;color:var(--muted)}
+.turma-bar-wrap{display:flex;flex-direction:column;gap:3px}
+.turma-mini-bar{height:4px;border-radius:2px;background:var(--border)}
+.turma-mini-fill{height:4px;border-radius:2px;transition:width .5s}
+.turma-pct{font-size:.72rem;font-weight:700}
+.pct-ok{color:var(--sage)}.pct-warn{color:var(--gold)}.pct-bad{color:var(--rust)}
 @media(max-width:900px){.funis-wrap{grid-template-columns:1fr}}
 .an-grid{align-items:stretch;overflow:hidden}
 .an-card{min-width:0;overflow:hidden}
@@ -776,8 +786,8 @@ function render(){
         <div class="ccard"><div class="ccard-ttl">Vendas por dia · produto vendido</div><div class="cwrap"><canvas id="ch-gp-dia"></canvas></div></div>
         <div class="ccard"><div class="ccard-ttl">Vendas por semana · últimas 8 semanas (Qui→Qua)</div><div class="cwrap"><canvas id="ch-gp-sem"></canvas></div></div>
       </div>
-      <!-- Campanha de origem + Quando foi criado: LADO A LADO -->
-      <div class="side-row">
+      <!-- Campanha de origem + Quando foi criado + Turmas: 3 colunas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;align-items:start">
         <div>
           <div class="sec-lbl2">Campanha de origem das vendas<span></span></div>
           <div class="twrap">${expandTable(ganhos.porProduto.origens||[],'gpo')}</div>
@@ -785,6 +795,38 @@ function render(){
         <div class="ot-card">
           <div class="ot-title">Quando foi criado o lead que virou venda · por produto</div>
           <div class="ot-rows">${otHtml(ganhos.porProduto.origemTemporal,col)}</div>
+        </div>
+        <div class="turmas-card">
+          <div class="ot-title">Controle de Turmas · ${PROD==='lean'?'Lean Governance':'CES'}</div>
+          ${(()=>{
+            const ts=(DATA.turmas?.[PROD])||[];
+            if(!ts.length) return '<div style="color:var(--muted);font-size:.78rem">Nenhuma turma cadastrada.</div>';
+            return ts.map(t=>{
+              const pctMin=t.minimo>0?Math.round(t.volumeReal/t.minimo*100):0;
+              const pctIdeal=t.ideal>0?Math.round(t.volumeReal/t.ideal*100):0;
+              const cls=pctMin>=100?'pct-ok':pctMin>=70?'pct-warn':'pct-bad';
+              return \`<div class="turma-row">
+                <div>
+                  <div class="turma-num">T\${t.turma}</div>
+                  <div class="turma-data">\${t.dataInicio}</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-weight:700;color:var(--navy)">\${fmtN(t.volumeReal)}</div>
+                  <div style="font-size:.65rem;color:var(--muted)">alunos</div>
+                </div>
+                <div class="turma-bar-wrap">
+                  <div style="font-size:.62rem;color:var(--muted)">Mín \${t.minimo}</div>
+                  <div class="turma-mini-bar"><div class="turma-mini-fill" style="width:\${Math.min(pctMin,100)}%;background:\${pctMin>=100?'var(--sage)':pctMin>=70?'var(--gold)':'var(--rust)'}"></div></div>
+                  <div class="turma-pct \${cls}">\${pctMin}%</div>
+                </div>
+                <div class="turma-bar-wrap">
+                  <div style="font-size:.62rem;color:var(--muted)">Ideal \${t.ideal}</div>
+                  <div class="turma-mini-bar"><div class="turma-mini-fill" style="width:\${Math.min(pctIdeal,100)}%;background:var(--lean)"></div></div>
+                  <div class="turma-pct" style="color:var(--lean)">\${pctIdeal}%</div>
+                </div>
+              </div>\`;
+            }).join('');
+          })()}
         </div>
       </div>
     </div>
@@ -862,11 +904,11 @@ function render(){
         <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
       </div>
       <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Time Online</div>
+        <div class="ccard-ttl">Top Motivos · Time Diarley</div>
         <div class="motivos" id="motivos-diarley" style="margin-top:4px"></div>
       </div>
       <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Time Presencial</div>
+        <div class="ccard-ttl">Top Motivos · Time Denise</div>
         <div class="motivos" id="motivos-denise" style="margin-top:4px"></div>
       </div>
     </div>
