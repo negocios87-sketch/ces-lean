@@ -320,8 +320,11 @@ app.get('/api/report', async (req,res) => {
     // ── GANHOS ───────────────────────────────────────────────
     for (const deal of dealsGanhos) {
       if (deal.status!=='won'||!deal.won_time) continue;
-      const val=parseFloat(deal.value||0);
-      if (val<=0) continue;
+      const val=parseFloat(deal.value||0)||0;
+      if (val<=0||!isFinite(val)) continue;
+      // Ignora deals do Matheus Paz
+      const owner=(deal.owner_name||(deal.user_id&&deal.user_id.name)||'').toLowerCase();
+      if (owner.includes('matheus paz')) continue;
       const prods=classifyProduct(deal[PRODUCT_FIELD]);
       const camp=classifyCampaign(deal[CAMPAIGN_FIELD]);
       const origem=classifyOrigem(deal[CAMPAIGN_FIELD]);
