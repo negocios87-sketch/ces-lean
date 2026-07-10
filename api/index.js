@@ -16,6 +16,8 @@ const FIELD_RENDA        = 'c95b2c453828853409c0a1f5d5f1a6ab30eebebf';
 const FIELD_CARGO        = '718c8aba81211c883ffd9f4616f75ee22a10b2da';
 const FIELD_IDADE        = '83d18fca9a1f15041acebd03956039213f47c75a';
 const FIELD_ESCOLARIDADE = '93ce10ba72f6b8aab8a4d18d699ddeb36b12ab1f';
+const TURMAS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=715115296&single=true&output=csv';
+
 const SCORE_RULES_URL    = process.env.SCORE_RULES_URL ||
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvwO3Ag2f2cbkVgR1pJZp6fANQcbualGKlAG50fmOljuEGKZ1gJBbSAjRdO3SomXUEVQOWnTvlfHRd/pub?gid=422517996&single=true&output=csv';
 
@@ -71,6 +73,32 @@ function classifyOrigem(v) {
 }
 
 // ── Score ─────────────────────────────────────────────────────
+async function carregarTurmas() {
+  try {
+    const r=await fetch(TURMAS_URL,{cache:'no-store'});
+    if (!r.ok) return [];
+    const txt=await r.text();
+    const linhas=txt.split(/\r?\n/).filter(l=>l.trim());
+    if (linhas.length<2) return [];
+    const delim=linhas[0].includes('\t')?'\t':',';
+    const headers=parseCsvLine(linhas[0],delim).map(h=>h.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,''));
+    return linhas.slice(1).filter(l=>l.trim()).map(line=>{
+      const cols=parseCsvLine(line,delim);
+      const o={};
+      headers.forEach((h,i)=>o[h]=(cols[i]||'').trim());
+      const parseNum=v=>parseInt(String(v||'').replace(/[^\d]/g,''))||0;
+      return {
+        produto:    (o.produto||'').toUpperCase().trim(),
+        dataInicio: o.datadeinicio||o.datainicio||o.data||'',
+        turma:      o.turma||'',
+        volumeReal: parseNum(o.volumereal||o.volume||'0'),
+        minimo:     parseNum(o.minimo||o.mnimo||'0'),
+        ideal:      parseNum(o.ideal||'0'),
+      };
+    }).filter(t=>t.produto&&t.turma);
+  } catch(e){ console.warn('Turmas failed:',e.message); return []; }
+}
+
 function normalizarTexto(v) {
   return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 }
@@ -199,13 +227,14 @@ async function fetchByFilter(filterId) {
 app.get('/api/report', async (req,res) => {
   if (!API_TOKEN) return res.status(500).json({ok:false,error:'PIPEDRIVE_TOKEN não configurado.'});
   try {
-    const [dealsCriados,dealsGanhos,dealsPerdidos,regrasScore,pipelinesRaw,stagesRaw] = await Promise.all([
+    const [dealsCriados,dealsGanhos,dealsPerdidos,regrasScore,pipelinesRaw,stagesRaw,turmasRaw] = await Promise.all([
       fetchByFilter(FILTER_CRIADOS),
       fetchByFilter(FILTER_GANHOS),
       fetchByFilter(FILTER_PERDIDOS),
       carregarRegrasScore(),
       pipeGet('/pipelines').catch(()=>({data:[]})),
       pipeGet('/stages').catch(()=>({data:[]})),
+      carregarTurmas(),
     ]);
     const pipelineMap = Object.fromEntries((pipelinesRaw.data||[]).map(p=>[String(p.id), p.name]));
     // stageMap: id → {name, order_nr, pipeline_id}
@@ -502,7 +531,11 @@ app.get('/api/report', async (req,res) => {
       },
     });
 
-    res.json({ok:true,mes:curYM,updatedAt:new Date().toISOString(),lean:ser(D.LEAN),ces:ser(D.CES)});
+    res.json({
+      ok:true, mes:curYM, updatedAt:new Date().toISOString(),
+      lean:ser(D.LEAN), ces:ser(D.CES),
+      turmas:{ lean:turmasRaw.filter(t=>t.produto==='LEAN'), ces:turmasRaw.filter(t=>t.produto==='CES') }
+    });
   } catch(e) {
     console.error('[/api/report]',e);
     res.status(500).json({ok:false,error:e.message});
