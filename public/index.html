@@ -685,6 +685,39 @@ function campTable(deals,prefix){
   </table>`;
 }
 
+/* ── Turmas ── */
+function renderTurmasCard(turmas, col){
+  if(!turmas||!turmas.length) return '<div style="color:var(--muted);font-size:.78rem">Nenhuma turma cadastrada.</div>';
+  return turmas.map(t=>{
+    const pctMin  = t.minimo>0  ? Math.round(t.volumeReal/t.minimo*100)  : 0;
+    const pctIdeal= t.ideal>0   ? Math.round(t.volumeReal/t.ideal*100)   : 0;
+    const barColor= pctMin>=100 ? 'var(--sage)' : pctMin>=70 ? 'var(--gold)' : 'var(--rust)';
+    const cls     = pctMin>=100 ? 'pct-ok'      : pctMin>=70 ? 'pct-warn'    : 'pct-bad';
+    return [
+      '<div class="turma-row">',
+        '<div>',
+          '<div class="turma-num">T'+esc(t.turma)+'</div>',
+          '<div class="turma-data">'+esc(t.dataInicio)+'</div>',
+        '</div>',
+        '<div style="text-align:center">',
+          '<div style="font-weight:700;color:var(--navy)">'+fmtN(t.volumeReal)+'</div>',
+          '<div style="font-size:.65rem;color:var(--muted)">alunos</div>',
+        '</div>',
+        '<div class="turma-bar-wrap">',
+          '<div style="font-size:.62rem;color:var(--muted)">Mín '+t.minimo+'</div>',
+          '<div class="turma-mini-bar"><div class="turma-mini-fill" style="width:'+Math.min(pctMin,100)+'%;background:'+barColor+'"></div></div>',
+          '<div class="turma-pct '+cls+'">'+pctMin+'%</div>',
+        '</div>',
+        '<div class="turma-bar-wrap">',
+          '<div style="font-size:.62rem;color:var(--muted)">Ideal '+t.ideal+'</div>',
+          '<div class="turma-mini-bar"><div class="turma-mini-fill" style="width:'+Math.min(pctIdeal,100)+'%;background:'+col+'"></div></div>',
+          '<div class="turma-pct" style="color:'+col+'">'+pctIdeal+'%</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }).join('');
+}
+
 /* ── Render ── */
 function render(){
   if(!DATA)return;
@@ -798,35 +831,7 @@ function render(){
         </div>
         <div class="turmas-card">
           <div class="ot-title">Controle de Turmas · ${PROD==='lean'?'Lean Governance':'CES'}</div>
-          ${(()=>{
-            const ts=(DATA.turmas?.[PROD])||[];
-            if(!ts.length) return '<div style="color:var(--muted);font-size:.78rem">Nenhuma turma cadastrada.</div>';
-            return ts.map(t=>{
-              const pctMin=t.minimo>0?Math.round(t.volumeReal/t.minimo*100):0;
-              const pctIdeal=t.ideal>0?Math.round(t.volumeReal/t.ideal*100):0;
-              const cls=pctMin>=100?'pct-ok':pctMin>=70?'pct-warn':'pct-bad';
-              return \`<div class="turma-row">
-                <div>
-                  <div class="turma-num">T\${t.turma}</div>
-                  <div class="turma-data">\${t.dataInicio}</div>
-                </div>
-                <div style="text-align:center">
-                  <div style="font-weight:700;color:var(--navy)">\${fmtN(t.volumeReal)}</div>
-                  <div style="font-size:.65rem;color:var(--muted)">alunos</div>
-                </div>
-                <div class="turma-bar-wrap">
-                  <div style="font-size:.62rem;color:var(--muted)">Mín \${t.minimo}</div>
-                  <div class="turma-mini-bar"><div class="turma-mini-fill" style="width:\${Math.min(pctMin,100)}%;background:\${pctMin>=100?'var(--sage)':pctMin>=70?'var(--gold)':'var(--rust)'}"></div></div>
-                  <div class="turma-pct \${cls}">\${pctMin}%</div>
-                </div>
-                <div class="turma-bar-wrap">
-                  <div style="font-size:.62rem;color:var(--muted)">Ideal \${t.ideal}</div>
-                  <div class="turma-mini-bar"><div class="turma-mini-fill" style="width:\${Math.min(pctIdeal,100)}%;background:var(--lean)"></div></div>
-                  <div class="turma-pct" style="color:var(--lean)">\${pctIdeal}%</div>
-                </div>
-              </div>\`;
-            }).join('');
-          })()}
+          ${renderTurmasCard(DATA.turmas?.[PROD]||[], col)}
         </div>
       </div>
     </div>
