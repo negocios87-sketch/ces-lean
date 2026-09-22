@@ -720,8 +720,9 @@ function filtrarMotivos(){
   if(val==='todos'){
     items = window._perdidosTopMotivos||[];
   } else {
-    const raw = (window._perdidosMotivoPorMes||{})[val]||[];
-    items = raw;
+    // val é o label (ex: "Mês atual (Jul/26)") — busca pelo label no mapa
+    const mapa = window._perdidosMotivoPorLabel||{};
+    items = mapa[val]||[];
   }
   renderMotivos('motivos-list', items, snap);
 }
@@ -967,7 +968,7 @@ function render(){
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div class="ccard-ttl" style="margin-bottom:0">Top Motivos de Perda</div>
           <select id="filtroMesCriacao" onchange="filtrarMotivos()" style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.7rem;padding:4px 8px;cursor:pointer;outline:none">
-            <option value="todos">Todos os meses</option>
+            <option value="todos">Todos</option>
           </select>
         </div>
         <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
@@ -986,19 +987,17 @@ function render(){
 
   /* Motivos — helper (renderMotivos é global, definida fora) */
   // Guarda dados para filtro
-  window._perdidosTopMotivos = perdidos.topMotivos||[];
-  window._perdidosMotivoPorMes = perdidos.motivosPorMesCriacao||{};
-  window._perdidosOrigemTemporal = perdidos.origemTemporal||[];
+  window._perdidosTopMotivos       = perdidos.topMotivos||[];
+  window._perdidosOrigemTemporal   = perdidos.origemTemporal||[];
+  window._perdidosMotivoPorLabel   = perdidos.motivosPorCategoria||{};
 
-  // Popula select com meses de criação
+  // Popula select com as 4 categorias fixas (igual ao card "quando foi criado")
   const selMesCri = document.getElementById('filtroMesCriacao');
   if(selMesCri){
     while(selMesCri.options.length > 1) selMesCri.remove(1);
-    Object.keys(perdidos.motivosPorMesCriacao||{}).forEach(ym=>{
-      const[y,m]=ym.split('-');
-      const nome=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+m-1]+'/'+y;
+    (perdidos.origemTemporal||[]).forEach(o=>{
       const opt=document.createElement('option');
-      opt.value=ym; opt.textContent=nome;
+      opt.value=o.label; opt.textContent=o.label;
       selMesCri.appendChild(opt);
     });
   }
