@@ -256,7 +256,7 @@ app.get('/api/report', async (req,res) => {
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
-      perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},motivosPorMesCriacao:{},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
+      perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},motivosPorCategoria:{cur:{},prev:{},prev2:{},antes:{}},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
         analitica:{
           'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
           'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
@@ -410,10 +410,8 @@ app.get('/api/report', async (req,res) => {
         dp.mes.dia[_d]=(dp.mes.dia[_d]||0)+1;
         dp.mes.motivos[motivo]=(dp.mes.motivos[motivo]||0)+1;
         dp.mes.motivosTimes[timeNome][motivo]=(dp.mes.motivosTimes[timeNome][motivo]||0)+1;
-        // Motivos por mês de criação do lead
-        const addYMP=toYM(deal.add_time)||'desconhecido';
-        if (!dp.mes.motivosPorMesCriacao[addYMP]) dp.mes.motivosPorMesCriacao[addYMP]={};
-        dp.mes.motivosPorMesCriacao[addYMP][motivo]=(dp.mes.motivosPorMesCriacao[addYMP][motivo]||0)+1;
+        // Motivos por categoria de criação (cur/prev/prev2/antes)
+        dp.mes.motivosPorCategoria[tempCat][motivo]=(dp.mes.motivosPorCategoria[tempCat][motivo]||0)+1;
         dp.mes.origTemporal[tempCat]=(dp.mes.origTemporal[tempCat]||0)+1;
         // Perdidos na etapa NEGOCIAÇÃO
         const stageIdP=String(deal.stage_id||'');
@@ -517,12 +515,20 @@ app.get('/api/report', async (req,res) => {
         porDia:   allDays.map(d=>({d,v:p.perdidos.mes.dia[d]||0})),
         porSemana:weeks.map(w=>({w,v:p.perdidos.sem[w]||0})),
         topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
-        motivosPorMesCriacao: Object.fromEntries(
-          Object.entries(p.perdidos.mes.motivosPorMesCriacao).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,motivos])=>{
+        motivosPorCategoria: (()=>{
+          const labels={
+            cur:`Mês atual (${ymLabel(curYM)})`,
+            prev:ymLabel(prevYM),
+            prev2:ymLabel(prev2YM),
+            antes:`Antes de ${ymLabel(prev2YM)}`,
+          };
+          const result={};
+          Object.entries(p.perdidos.mes.motivosPorCategoria).forEach(([cat,motivos])=>{
             const tot=Object.values(motivos).reduce((s,v)=>s+v,0);
-            return [mes, Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:tot?Math.round(c/tot*100):0}))];
-          })
-        ),
+            result[labels[cat]]=Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:tot?Math.round(c/tot*100):0}));
+          });
+          return result;
+        })(),
         motivosTimes: Object.fromEntries(
           Object.entries(p.perdidos.mes.motivosTimes).map(([time,motivos])=>{
             const tot=Object.values(motivos).reduce((s,v)=>s+v,0);
