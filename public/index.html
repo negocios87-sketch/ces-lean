@@ -691,6 +691,26 @@ function campTable(deals,prefix){
   </table>`;
 }
 
+/* ── renderMotivos (global) ── */
+function renderMotivos(elId, items, snapOverride){
+  const el=document.getElementById(elId); if(!el)return;
+  const snapMotivos=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
+  el.innerHTML=items&&items.length
+    ?items.map(m=>{
+        const _snap=snapOverride||snapMotivos;
+        const snapM=_snap.find(s=>s.m===m.m);
+        const snapPct=snapM?snapM.pct:null;
+        return '<div class="motivo-row">'
+          +'<div class="motivo-name" title="'+esc(m.m)+'">'+esc(m.m)+'</div>'
+          +'<div class="motivo-track"><div class="motivo-fill" style="width:'+m.pct+'%;background:#c0533a"></div></div>'
+          +'<div class="motivo-pct">'+m.pct+'%</div>'
+          +'<div class="motivo-count">'+m.c+'</div>'
+          +(SNAP&&SNAP.data&&!snapOverride?ppDelta(m.pct,snapPct):'')
+          +'</div>';
+    }).join('')
+    :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados.</div>';
+}
+
 /* ── Filtro motivos por mês de criação ── */
 function filtrarMotivos(){
   const sel  = document.getElementById('filtroMesCriacao');
@@ -964,24 +984,7 @@ function render(){
     </div>
   `;
 
-  /* Motivos — helper */
-  const snapMotivos=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
-  function renderMotivos(elId, items, snapOverride){
-    const el=document.getElementById(elId); if(!el)return;
-    el.innerHTML=items&&items.length
-      ?items.map(m=>{
-          const _snap=snapOverride||snapMotivos;
-          const snapM=_snap.find(s=>s.m===m.m);
-          const snapPct=snapM?snapM.pct:null;
-          return`<div class="motivo-row">
-            <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
-            <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
-            <div class="motivo-pct">${m.pct}%</div>
-            <div class="motivo-count">${m.c}</div>
-            ${(SNAP&&SNAP.data&&!snapOverride)?ppDelta(m.pct,snapPct):''}
-          </div>`;}).join('')
-      :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados.</div>';
-  }
+  /* Motivos — helper (renderMotivos é global, definida fora) */
   // Guarda dados para filtro
   window._perdidosTopMotivos = perdidos.topMotivos||[];
   window._perdidosMotivoPorMes = perdidos.motivosPorMesCriacao||{};
