@@ -256,7 +256,7 @@ app.get('/api/report', async (req,res) => {
       criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{}}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
-      perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
+      perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},motivosPorMesCriacao:{},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
         analitica:{
           'Sem perfil':   {renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
           'Sem interesse':{renda:{},cargo:{},idade:{},escolaridade:{},outrosRaw:{renda:{},cargo:{},idade:{},escolaridade:{}}},
@@ -309,21 +309,19 @@ app.get('/api/report', async (req,res) => {
           if (!dc.mes.etapas[timeName][stageKey]) dc.mes.etapas[timeName][stageKey]={t:0,order:stageInfo.order};
           dc.mes.etapas[timeName][stageKey].t++;
         }
-        // Produtos vendidos
-        const val=parseFloat(deal.value||0);
-        const prods=classifyProduct(deal[PRODUCT_FIELD]);
-        if (deal.status==='won'&&val>0&&prods.length) {
-          for (const p of prods) {
-            const nome=p==='LEAN'?'Lean Governance':'CES';
-            if (!dc.mes.produtosVendidos[nome]) dc.mes.produtosVendidos[nome]={t:0,rev:0,deals:[]};
-            dc.mes.produtosVendidos[nome].t++;dc.mes.produtosVendidos[nome].rev+=val;
-            dc.mes.produtosVendidos[nome].deals.push({
-              campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
-              dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
-              proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
-              valor:val, produto:String(deal[PRODUCT_FIELD]||'—'),
-            });
-          }
+        // Produtos vendidos — todos os ganhos válidos da campanha, produto bruto
+        const val=parseFloat(deal.value||0)||0;
+        if (ganhoValidoIds.has(deal.id)&&val>0) {
+          const nomeProd=String(deal[PRODUCT_FIELD]||'Não informado').trim()||'Não informado';
+          if (!dc.mes.produtosVendidos[nomeProd]) dc.mes.produtosVendidos[nomeProd]={t:0,rev:0,deals:[]};
+          dc.mes.produtosVendidos[nomeProd].t++;
+          dc.mes.produtosVendidos[nomeProd].rev+=val;
+          dc.mes.produtosVendidos[nomeProd].deals.push({
+            campanha:String(deal[CAMPAIGN_FIELD]||'—').trim(),
+            dataGanho:deal.won_time?deal.won_time.substring(0,10):'—',
+            proprietario:deal.owner_name||(deal.user_id&&deal.user_id.name)||'—',
+            valor:val, produto:nomeProd,
+          });
         }
       }
       if (wSet.has(_w)) dc.sem[_w]=(dc.sem[_w]||0)+1;
@@ -412,6 +410,10 @@ app.get('/api/report', async (req,res) => {
         dp.mes.dia[_d]=(dp.mes.dia[_d]||0)+1;
         dp.mes.motivos[motivo]=(dp.mes.motivos[motivo]||0)+1;
         dp.mes.motivosTimes[timeNome][motivo]=(dp.mes.motivosTimes[timeNome][motivo]||0)+1;
+        // Motivos por mês de criação do lead
+        const addYMP=toYM(deal.add_time)||'desconhecido';
+        if (!dp.mes.motivosPorMesCriacao[addYMP]) dp.mes.motivosPorMesCriacao[addYMP]={};
+        dp.mes.motivosPorMesCriacao[addYMP][motivo]=(dp.mes.motivosPorMesCriacao[addYMP][motivo]||0)+1;
         dp.mes.origTemporal[tempCat]=(dp.mes.origTemporal[tempCat]||0)+1;
         // Perdidos na etapa NEGOCIAÇÃO
         const stageIdP=String(deal.stage_id||'');
@@ -515,6 +517,12 @@ app.get('/api/report', async (req,res) => {
         porDia:   allDays.map(d=>({d,v:p.perdidos.mes.dia[d]||0})),
         porSemana:weeks.map(w=>({w,v:p.perdidos.sem[w]||0})),
         topMotivos:Object.entries(p.perdidos.mes.motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:p.perdidos.mes.t?Math.round(c/p.perdidos.mes.t*100):0})),
+        motivosPorMesCriacao: Object.fromEntries(
+          Object.entries(p.perdidos.mes.motivosPorMesCriacao).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,motivos])=>{
+            const tot=Object.values(motivos).reduce((s,v)=>s+v,0);
+            return [mes, Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([m,c])=>({m,c,pct:tot?Math.round(c/tot*100):0}))];
+          })
+        ),
         motivosTimes: Object.fromEntries(
           Object.entries(p.perdidos.mes.motivosTimes).map(([time,motivos])=>{
             const tot=Object.values(motivos).reduce((s,v)=>s+v,0);
