@@ -691,18 +691,28 @@ function campTable(deals,prefix){
   </table>`;
 }
 
-/* ── Filtro de origem temporal dos perdidos ── */
-function filtrarOrigemTemporal(){
-  const sel   = document.getElementById('filtroMesCriacao');
-  const val   = sel ? sel.value : 'todos';
-  const dados = window._perdidosOrigemTemporal || [];
-  const filtrados = val === 'todos' ? dados : dados.filter(o=>o.label===val);
-  const col   = PROD==='lean' ? '#4a6fa5' : '#0e7490';
+/* ── Filtro motivos por mês de criação ── */
+function filtrarMotivos(){
+  const sel  = document.getElementById('filtroMesCriacao');
+  const val  = sel ? sel.value : 'todos';
+  const snap = SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
+  let items;
+  if(val==='todos'){
+    items = window._perdidosTopMotivos||[];
+  } else {
+    const raw = (window._perdidosMotivoPorMes||{})[val]||[];
+    items = raw;
+  }
+  renderMotivos('motivos-list', items, snap);
+}
+
+function renderOrigemTemporalPerdidos(){
+  const dados = window._perdidosOrigemTemporal||[];
   const el    = document.getElementById('perdidos-origem-temporal');
   if(!el) return;
-  const max = Math.max(...filtrados.map(d=>d.v),1);
-  el.innerHTML = filtrados.length
-    ? filtrados.map(o=>`
+  const max = Math.max(...dados.map(d=>d.v),1);
+  el.innerHTML = dados.length
+    ? dados.map(o=>`
         <div class="ot-row">
           <div class="ot-label">${esc(o.label)}</div>
           <div class="ot-track"><div class="ot-fill" style="width:${Math.round(o.v/max*100)}%;background:#c0533a"></div></div>
@@ -934,16 +944,16 @@ function render(){
     <!-- Motivos + Quando foi criado -->
     <div class="side-row">
       <div class="ccard">
-        <div class="ccard-ttl">Top Motivos de Perda · Geral</div>
-        <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
-      </div>
-      <div class="ot-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="ot-title" style="margin-bottom:0">Quando foi criado o lead que foi perdido</div>
-          <select id="filtroMesCriacao" onchange="filtrarOrigemTemporal()" style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.7rem;padding:4px 8px;cursor:pointer;outline:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="ccard-ttl" style="margin-bottom:0">Top Motivos de Perda</div>
+          <select id="filtroMesCriacao" onchange="filtrarMotivos()" style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.7rem;padding:4px 8px;cursor:pointer;outline:none">
             <option value="todos">Todos os meses</option>
           </select>
         </div>
+        <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
+      </div>
+      <div class="ot-card">
+        <div class="ot-title">Quando foi criado o lead que foi perdido</div>
         <div class="ot-rows" id="perdidos-origem-temporal"></div>
       </div>
     </div>
@@ -956,39 +966,41 @@ function render(){
 
   /* Motivos — helper */
   const snapMotivos=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.topMotivos||[]:[];
-  function renderMotivos(elId, items){
+  function renderMotivos(elId, items, snapOverride){
     const el=document.getElementById(elId); if(!el)return;
     el.innerHTML=items&&items.length
       ?items.map(m=>{
-          const snapM=snapMotivos.find(s=>s.m===m.m);
+          const _snap=snapOverride||snapMotivos;
+          const snapM=_snap.find(s=>s.m===m.m);
           const snapPct=snapM?snapM.pct:null;
           return`<div class="motivo-row">
             <div class="motivo-name" title="${esc(m.m)}">${esc(m.m)}</div>
             <div class="motivo-track"><div class="motivo-fill" style="width:${m.pct}%;background:#c0533a"></div></div>
             <div class="motivo-pct">${m.pct}%</div>
             <div class="motivo-count">${m.c}</div>
-            ${SNAP&&SNAP.data?ppDelta(m.pct,snapPct):''}
+            ${(SNAP&&SNAP.data&&!snapOverride)?ppDelta(m.pct,snapPct):''}
           </div>`;}).join('')
       :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados.</div>';
   }
-  renderMotivos('motivos-list', perdidos.topMotivos);
-
-  /* Origem temporal dos perdidos + filtro de mês de criação */
+  // Guarda dados para filtro
+  window._perdidosTopMotivos = perdidos.topMotivos||[];
+  window._perdidosMotivoPorMes = perdidos.motivosPorMesCriacao||{};
   window._perdidosOrigemTemporal = perdidos.origemTemporal||[];
-  // Popula o select
+
+  // Popula select com meses de criação
   const selMesCri = document.getElementById('filtroMesCriacao');
   if(selMesCri){
-    // Reconstrói opções
     while(selMesCri.options.length > 1) selMesCri.remove(1);
-    (perdidos.origemTemporal||[]).forEach(o=>{
-      if(o.v > 0){
-        const opt = document.createElement('option');
-        opt.value = o.label; opt.textContent = o.label;
-        selMesCri.appendChild(opt);
-      }
+    Object.keys(perdidos.motivosPorMesCriacao||{}).forEach(ym=>{
+      const[y,m]=ym.split('-');
+      const nome=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+m-1]+'/'+y;
+      const opt=document.createElement('option');
+      opt.value=ym; opt.textContent=nome;
+      selMesCri.appendChild(opt);
     });
   }
-  filtrarOrigemTemporal();
+  filtrarMotivos();
+  renderOrigemTemporalPerdidos();
 
   /* Charts */
   mkStackedBar('ch-cri-dia',dLabels,[
