@@ -147,14 +147,20 @@ tr.outros-hidden{display:none!important}
 .funis-chart-ttl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .funis-chart-canvas{position:relative;height:240px}
 .turmas-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.turma-row{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:.78rem}
+.turma-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border)}
 .turma-row:last-child{border-bottom:none}
-.turma-num{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--navy)}
-.turma-data{font-size:.69rem;color:var(--muted)}
-.turma-bar-wrap{display:flex;flex-direction:column;gap:3px}
-.turma-mini-bar{height:4px;border-radius:2px;background:var(--border)}
+.turma-id-blk{flex-shrink:0;width:40px}
+.turma-num{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;color:var(--navy)}
+.turma-data{font-size:.65rem;color:var(--muted);margin-top:1px}
+.turma-vol-blk{flex-shrink:0;width:44px;text-align:center}
+.turma-vol{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--navy)}
+.turma-vol-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.turma-bars{flex:1;display:flex;flex-direction:column;gap:6px}
+.turma-bar-row{display:flex;align-items:center;gap:6px}
+.turma-bar-lbl{font-size:.62rem;color:var(--muted);width:48px;flex-shrink:0}
+.turma-mini-bar{flex:1;height:4px;border-radius:2px;background:var(--border)}
 .turma-mini-fill{height:4px;border-radius:2px;transition:width .5s}
-.turma-pct{font-size:.72rem;font-weight:700}
+.turma-pct{font-size:.72rem;font-weight:700;width:32px;text-align:right;flex-shrink:0}
 .pct-ok{color:var(--sage)}.pct-warn{color:var(--gold)}.pct-bad{color:var(--rust)}
 @media(max-width:900px){.funis-wrap{grid-template-columns:1fr}}
 .an-grid{align-items:stretch;overflow:hidden}
@@ -685,33 +691,56 @@ function campTable(deals,prefix){
   </table>`;
 }
 
+/* ── Filtro de origem temporal dos perdidos ── */
+function filtrarOrigemTemporal(){
+  const sel   = document.getElementById('filtroMesCriacao');
+  const val   = sel ? sel.value : 'todos';
+  const dados = window._perdidosOrigemTemporal || [];
+  const filtrados = val === 'todos' ? dados : dados.filter(o=>o.label===val);
+  const col   = PROD==='lean' ? '#4a6fa5' : '#0e7490';
+  const el    = document.getElementById('perdidos-origem-temporal');
+  if(!el) return;
+  const max = Math.max(...filtrados.map(d=>d.v),1);
+  el.innerHTML = filtrados.length
+    ? filtrados.map(o=>`
+        <div class="ot-row">
+          <div class="ot-label">${esc(o.label)}</div>
+          <div class="ot-track"><div class="ot-fill" style="width:${Math.round(o.v/max*100)}%;background:#c0533a"></div></div>
+          <div class="ot-val">${fmtN(o.v)}</div>
+          <div class="ot-pct">${o.pct}%</div>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:.78rem">Sem dados.</div>';
+}
+
 /* ── Turmas ── */
 function renderTurmasCard(turmas, col){
   if(!turmas||!turmas.length) return '<div style="color:var(--muted);font-size:.78rem">Nenhuma turma cadastrada.</div>';
   return turmas.map(t=>{
-    const pctMin  = t.minimo>0  ? Math.round(t.volumeReal/t.minimo*100)  : 0;
-    const pctIdeal= t.ideal>0   ? Math.round(t.volumeReal/t.ideal*100)   : 0;
-    const barColor= pctMin>=100 ? 'var(--sage)' : pctMin>=70 ? 'var(--gold)' : 'var(--rust)';
-    const cls     = pctMin>=100 ? 'pct-ok'      : pctMin>=70 ? 'pct-warn'    : 'pct-bad';
+    const pctMin  = t.minimo>0 ? Math.round(t.volumeReal/t.minimo*100)  : 0;
+    const pctIdeal= t.ideal>0  ? Math.round(t.volumeReal/t.ideal*100)   : 0;
+    const barMin  = pctMin>=100 ? 'var(--sage)' : pctMin>=70 ? 'var(--gold)' : 'var(--rust)';
+    const clsMin  = pctMin>=100 ? 'pct-ok'      : pctMin>=70 ? 'pct-warn'    : 'pct-bad';
     return [
       '<div class="turma-row">',
-        '<div>',
+        '<div class="turma-id-blk">',
           '<div class="turma-num">T'+esc(t.turma)+'</div>',
           '<div class="turma-data">'+esc(t.dataInicio)+'</div>',
         '</div>',
-        '<div style="text-align:center">',
-          '<div style="font-weight:700;color:var(--navy)">'+fmtN(t.volumeReal)+'</div>',
-          '<div style="font-size:.65rem;color:var(--muted)">alunos</div>',
+        '<div class="turma-vol-blk">',
+          '<div class="turma-vol">'+fmtN(t.volumeReal)+'</div>',
+          '<div class="turma-vol-lbl">alunos</div>',
         '</div>',
-        '<div class="turma-bar-wrap">',
-          '<div style="font-size:.62rem;color:var(--muted)">Mín '+t.minimo+'</div>',
-          '<div class="turma-mini-bar"><div class="turma-mini-fill" style="width:'+Math.min(pctMin,100)+'%;background:'+barColor+'"></div></div>',
-          '<div class="turma-pct '+cls+'">'+pctMin+'%</div>',
-        '</div>',
-        '<div class="turma-bar-wrap">',
-          '<div style="font-size:.62rem;color:var(--muted)">Ideal '+t.ideal+'</div>',
-          '<div class="turma-mini-bar"><div class="turma-mini-fill" style="width:'+Math.min(pctIdeal,100)+'%;background:'+col+'"></div></div>',
-          '<div class="turma-pct" style="color:'+col+'">'+pctIdeal+'%</div>',
+        '<div class="turma-bars">',
+          '<div class="turma-bar-row">',
+            '<div class="turma-bar-lbl">Mín '+t.minimo+'</div>',
+            '<div class="turma-mini-bar"><div class="turma-mini-fill" style="width:'+Math.min(pctMin,100)+'%;background:'+barMin+'"></div></div>',
+            '<div class="turma-pct '+clsMin+'">'+pctMin+'%</div>',
+          '</div>',
+          '<div class="turma-bar-row">',
+            '<div class="turma-bar-lbl">Ideal '+t.ideal+'</div>',
+            '<div class="turma-mini-bar"><div class="turma-mini-fill" style="width:'+Math.min(pctIdeal,100)+'%;background:'+col+'"></div></div>',
+            '<div class="turma-pct" style="color:'+col+'">'+pctIdeal+'%</div>',
+          '</div>',
         '</div>',
       '</div>'
     ].join('');
@@ -902,19 +931,20 @@ function render(){
       </div>
     </div>
 
-    <!-- Motivos por time: 3 colunas -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px" id="motivos-times-wrap">
+    <!-- Motivos + Quando foi criado -->
+    <div class="side-row">
       <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Geral</div>
+        <div class="ccard-ttl">Top Motivos de Perda · Geral</div>
         <div class="motivos" id="motivos-list" style="margin-top:4px"></div>
       </div>
-      <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Time Diarley</div>
-        <div class="motivos" id="motivos-diarley" style="margin-top:4px"></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-ttl">Top Motivos · Time Denise</div>
-        <div class="motivos" id="motivos-denise" style="margin-top:4px"></div>
+      <div class="ot-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="ot-title" style="margin-bottom:0">Quando foi criado o lead que foi perdido</div>
+          <select id="filtroMesCriacao" onchange="filtrarOrigemTemporal()" style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.7rem;padding:4px 8px;cursor:pointer;outline:none">
+            <option value="todos">Todos os meses</option>
+          </select>
+        </div>
+        <div class="ot-rows" id="perdidos-origem-temporal"></div>
       </div>
     </div>
 
@@ -941,9 +971,24 @@ function render(){
           </div>`;}).join('')
       :'<div style="color:var(--muted);font-size:.8rem;padding:4px 0">Sem dados.</div>';
   }
-  renderMotivos('motivos-list',    perdidos.topMotivos);
-  renderMotivos('motivos-diarley', perdidos.motivosTimes?.['Time Diarley']?.top||[]);
-  renderMotivos('motivos-denise',  perdidos.motivosTimes?.['Time Denise']?.top||[]);
+  renderMotivos('motivos-list', perdidos.topMotivos);
+
+  /* Origem temporal dos perdidos + filtro de mês de criação */
+  window._perdidosOrigemTemporal = perdidos.origemTemporal||[];
+  // Popula o select
+  const selMesCri = document.getElementById('filtroMesCriacao');
+  if(selMesCri){
+    // Reconstrói opções
+    while(selMesCri.options.length > 1) selMesCri.remove(1);
+    (perdidos.origemTemporal||[]).forEach(o=>{
+      if(o.v > 0){
+        const opt = document.createElement('option');
+        opt.value = o.label; opt.textContent = o.label;
+        selMesCri.appendChild(opt);
+      }
+    });
+  }
+  filtrarOrigemTemporal();
 
   /* Charts */
   mkStackedBar('ch-cri-dia',dLabels,[
