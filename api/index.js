@@ -253,7 +253,7 @@ app.get('/api/report', async (req,res) => {
     const allDays=Array.from({length:daysInMonth},(_,i)=>`${curYM}-${String(i+1).padStart(2,'0')}`);
 
     const empty = () => ({
-      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{}}, sem:{} },
+      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{},workshopCount:0}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},motivosPorCategoria:{cur:{},prev:{},prev2:{},antes:{}},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
@@ -284,22 +284,31 @@ app.get('/api/report', async (req,res) => {
       const dc=D[camp].criados;
       if (_ym===curYM) {
         const _d=toYMD(deal.add_time);
+        // Detecta Workshop / Sala pelo UTM campaign
+        const isWorkshop=/workshop|sala/i.test(String(deal[CAMPAIGN_FIELD]||''));
         dc.mes.t++;
+        if (isWorkshop) dc.mes.workshopCount++;
         dc.mes.dia[_d]=(dc.mes.dia[_d]||0)+1;
         if (deal.status==='open')  {dc.mes.st.a++;dc.mes.diaA[_d]=(dc.mes.diaA[_d]||0)+1;}
         // Ganho válido: só conta se está no filtro de ganhos e passou todos os filtros
         if (deal.status==='won'&&ganhoValidoIds.has(deal.id)) {dc.mes.st.g++;dc.mes.diaG[_d]=(dc.mes.diaG[_d]||0)+1;}
         if (deal.status==='lost')  {dc.mes.st.p++;dc.mes.diaP[_d]=(dc.mes.diaP[_d]||0)+1;}
-        // Score
+        // Score — exclui leads de Workshop/Sala
+        if (!isWorkshop) {
         const score=calcularScore(deal,regrasScore);
         const faixa=faixaScore(score);
         if (faixa) dc.mes.scoreFaixas[faixa]=(dc.mes.scoreFaixas[faixa]||0)+1;
+        }
         // Funil — agrupa por time
         const pipeId=String(deal.pipeline_id||'');
         const timeName=classifyTime(deal.pipeline_id);
         if (!dc.mes.funis[timeName]) dc.mes.funis[timeName]={t:0,scoreFaixas:emptyFaixas()};
         dc.mes.funis[timeName].t++;
-        if (faixa) dc.mes.funis[timeName].scoreFaixas[faixa]=(dc.mes.funis[timeName].scoreFaixas[faixa]||0)+1;
+        if (!isWorkshop) {
+          const _score2=calcularScore(deal,regrasScore);
+          const _faixa2=faixaScore(_score2);
+          if (_faixa2) dc.mes.funis[timeName].scoreFaixas[_faixa2]=(dc.mes.funis[timeName].scoreFaixas[_faixa2]||0)+1;
+        }
         // Etapas (só abertos) — agrupa por time
         if (deal.status==='open') {
           const stageId=String(deal.stage_id||'');
@@ -471,7 +480,8 @@ app.get('/api/report', async (req,res) => {
         porDia:  allDays.map(d=>({d,v:p.criados.mes.dia[d]||0,a:p.criados.mes.diaA[d]||0,g:p.criados.mes.diaG[d]||0,p:p.criados.mes.diaP[d]||0})),
         porSemana:weeks.map(w=>({w,v:p.criados.sem[w]||0})),
         produtosVendidos:Object.entries(p.criados.mes.produtosVendidos).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
-        scoreFaixas:serFaixas(p.criados.mes.scoreFaixas,p.criados.mes.t),
+        workshopCount: p.criados.mes.workshopCount,
+        scoreFaixas:serFaixas(p.criados.mes.scoreFaixas, p.criados.mes.t - p.criados.mes.workshopCount),
         etapas: Object.fromEntries(
           Object.entries(p.criados.mes.etapas).map(([funil,etapas])=>[funil,
             Object.entries(etapas)
