@@ -531,7 +531,12 @@ function mkStackedBar(id,labels,datasets){
 }
 
 /* ── Score line (com banda ICP e tooltip com volume) ── */
-function mkScoreLine(id,items,col,snapItems){
+const SLA_DATA={
+  lean:[0.0,0.0,3.2,8.6,14.0,20.4,26.3,26.3],
+  ces: [0.0,0.0,2.7,0.0, 5.4,21.6,14.9,50.0],
+};
+
+function mkScoreLine(id,items,col,snapItems,slaData){
   dk(id);
   const ctx=document.getElementById(id);if(!ctx)return;
   const labels=(items||[]).map(x=>x.label);
@@ -580,7 +585,15 @@ function mkScoreLine(id,items,col,snapItems){
         data:values,borderColor:col,backgroundColor:col+'18',
         borderWidth:2,fill:false,tension:.28,
         pointRadius:4,pointHoverRadius:5,pointBackgroundColor:col,
-      }
+      },
+      ...(slaData&&slaData.length?[{
+        label:'SLA Ganhos',
+        data:slaData,
+        borderColor:'#4a7c6a',backgroundColor:'transparent',
+        borderWidth:2,borderDash:[6,3],fill:false,tension:.28,
+        pointRadius:3,pointBackgroundColor:'#4a7c6a',
+        datalabels:{display:false},
+      }]:[]),
     ]},
     plugins:[bandPlugin],
     options:{responsive:true,maintainAspectRatio:false,
@@ -1014,7 +1027,7 @@ function render(){
   ]);
   mkBar('ch-cri-sem', wLabels,criados.porSemana.map(x=>x.v),col,{weekly:true});
   const snapScore=SNAP&&SNAP.data?SNAP.data[PROD]?.criados?.scoreFaixas||[]:[];
-  mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col,snapScore.length?snapScore:null);
+  mkScoreLine('ch-cri-score',criados.scoreFaixas||[],col,snapScore.length?snapScore:null,SLA_DATA[PROD]);
   mkBarLine('ch-gp-dia', dLabels,ganhos.porProduto.porDia.map(x=>x.v),    ganhos.porProduto.porDia.map(x=>x.r),    col,{maxTicks:20});
   mkBarLine('ch-gp-sem', wLabels,ganhos.porProduto.porSemana.map(x=>x.v), ganhos.porProduto.porSemana.map(x=>x.r), col,{weekly:false});
   mkBarLine('ch-gc-dia', dLabels,ganhos.porCampanha.porDia.map(x=>x.v),    ganhos.porCampanha.porDia.map(x=>x.r),    col,{maxTicks:20});
@@ -1022,7 +1035,7 @@ function render(){
   mkBar('ch-perd-dia',dLabels,perdidos.porDia.map(x=>x.v),'#c0533a',{maxTicks:20});
   mkBar('ch-perd-sem',wLabels,perdidos.porSemana.map(x=>x.v),'#c0533a',{weekly:true});
   const snapScorePerd=SNAP&&SNAP.data?SNAP.data[PROD]?.perdidos?.scoreFaixas||[]:[];
-  mkScoreLine('ch-perd-score',perdidos.scoreFaixas||[],'#c0533a',snapScorePerd.length?snapScorePerd:null);
+  mkScoreLine('ch-perd-score',perdidos.scoreFaixas||[],'#c0533a',snapScorePerd.length?snapScorePerd:null,SLA_DATA[PROD]);
 }
 
 function setProduct(p){PROD=p;if(DATA){render();renderAnalitica();}}
