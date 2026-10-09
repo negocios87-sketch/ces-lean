@@ -543,34 +543,7 @@ function mkScoreLine(id,items,col,snapItems,slaData){
   const values=(items||[]).map(x=>x.pct||0);
   const volumes=(items||[]).map(x=>x.v||0);
 
-  const bandPlugin={
-    id:'scoreBand',
-    beforeDraw(chart){
-      const{ctx:c,chartArea,scales}=chart;
-      if(!chartArea||!scales?.x)return;
-      try{
-        // ICP = De 6 a 6,9 (idx 4) até De 8 a 8,9 (idx 6)
-        const step=scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0);
-        const x0=scales.x.getPixelForValue(4)-step/2;
-        const x1=scales.x.getPixelForValue(6)+step/2;
-        c.save();
-        c.fillStyle='rgba(184,135,63,.18)';
-        c.fillRect(x0,chartArea.top,x1-x0,chartArea.bottom-chartArea.top);
-        // Linha vertical e label ICP
-        c.strokeStyle='rgba(184,135,63,.45)';
-        c.lineWidth=1;
-        c.setLineDash([4,3]);
-        c.beginPath();c.moveTo(x0,chartArea.top);c.lineTo(x0,chartArea.bottom);c.stroke();
-        c.beginPath();c.moveTo(x1,chartArea.top);c.lineTo(x1,chartArea.bottom);c.stroke();
-        c.setLineDash([]);
-        c.fillStyle='rgba(184,135,63,.7)';
-        c.font='bold 9px DM Sans,sans-serif';
-        c.textAlign='center';
-        c.fillText('ICP',(x0+x1)/2,chartArea.top+12);
-        c.restore();
-      }catch(e){}
-    }
-  };
+  const bandPlugin={id:'scoreBand'};
 
   charts[id]=new Chart(ctx,{type:'line',
     data:{labels,datasets:[
@@ -589,9 +562,9 @@ function mkScoreLine(id,items,col,snapItems,slaData){
       ...(slaData&&slaData.length?[{
         label:'SLA Ganhos',
         data:slaData,
-        borderColor:'#4a7c6a',backgroundColor:'transparent',
-        borderWidth:2,borderDash:[6,3],fill:false,tension:.28,
-        pointRadius:3,pointBackgroundColor:'#4a7c6a',
+        borderColor:'#e8a0a0',backgroundColor:'transparent',
+        borderWidth:1.5,borderDash:[6,3],fill:false,tension:.28,
+        pointRadius:2,pointBackgroundColor:'#e8a0a0',
         datalabels:{display:false},
       }]:[]),
     ]},
