@@ -1052,6 +1052,8 @@ function setTab(t){
   TAB=t;
   document.getElementById('pageMain').style.display      = t==='main'      ?'block':'none';
   document.getElementById('pageAnalitica').style.display = t==='analitica' ?'block':'none';
+  document.getElementById('pageLeads').style.display     = t==='leads'     ?'block':'none';
+  if(t==='leads') renderLeads();
   document.getElementById('tabMain').style.background      = t==='main'      ?'rgba(255,255,255,.15)':'';
   document.getElementById('tabMain').style.color            = t==='main'      ?'#fff':'';
   document.getElementById('tabAnalitica').style.background  = t==='analitica' ?'rgba(255,255,255,.15)':'';
@@ -1888,6 +1890,99 @@ async function doRefresh(){
   document.getElementById('content').innerHTML='<div class="state-wrap"><div class="spinner"></div><span>Atualizando…</span></div>';
   await loadData();
   btn.disabled=false;btn.textContent='↺ Atualizar';
+}
+
+/* ── Leads ── */
+let LEADS_SORT = {col:'score_dash', dir:'desc'};
+let LEADS_Q = '';
+
+function renderLeads(){
+  const el=document.getElementById('contentLeads');
+  if(!DATA){ el.innerHTML='<div class="state-wrap"><span>Sem dados.</span></div>'; return; }
+  const pd=DATA[PROD];
+  const leads=(pd?.criados?.leads)||[];
+  const lbl=PROD==='lean'?'Lean Governance':'CES';
+  const mes=fmtM(DATA.mes);
+
+  // filtro
+  const q=LEADS_Q.toLowerCase().trim();
+  const filtered=leads.filter(l=>{
+    if(!q)return true;
+    return [l.title,l.renda,l.cargo,l.idade,l.escolaridade].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+
+  // sort
+  const {col,dir}=LEADS_SORT;
+  const mult=dir==='asc'?1:-1;
+  filtered.sort((a,b)=>{
+    const av=a[col]??'', bv=b[col]??'';
+    if(typeof av==='number'&&typeof bv==='number') return(av-bv)*mult;
+    return String(av).localeCompare(String(bv),'pt')*mult;
+  });
+
+  function scorePill(s){
+    if(s===null||s===undefined)return '<span style="color:var(--muted)">—</span>';
+    const cls=s>=6&&s<9?'score-icp':s<5?'score-low':'score-mid';
+    return`<span class="score-pill ${cls}">${Number(s).toFixed(2)}</span>`;
+  }
+  function thSort(c,lbl2){
+    const active=LEADS_SORT.col===c;
+    const cls=active?(LEADS_SORT.dir==='asc'?'sorted-asc':'sorted-desc'):'';
+    return`<th class="${cls}" onclick="leadsSort('${c}')">${lbl2}</th>`;
+  }
+  function esc2(v){return String(v||'—').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  const ORG_URL=`https://boardacademy.pipedrive.com`;
+
+  const rows=filtered.map(l=>{
+    const status=l.status==='open'?'<span style="color:#0369a1;font-size:.68rem;font-weight:600">Aberto</span>'
+      :l.status==='won'?'<span style="color:#166534;font-size:.68rem;font-weight:600">Ganho</span>'
+      :'<span style="color:#991b1b;font-size:.68rem;font-weight:600">Perdido</span>';
+    return`<tr>
+      <td class="td-name"><a href="${ORG_URL}/deal/${l.id}" target="_blank" title="Abrir no Pipedrive">${esc2(l.title)}</a></td>
+      <td>${status}</td>
+      <td class="td-dim" title="${esc2(l.renda)}">${esc2(l.renda)}</td>
+      <td class="td-dim" title="${esc2(l.cargo)}">${esc2(l.cargo)}</td>
+      <td class="td-dim" title="${esc2(l.idade)}">${esc2(l.idade)}</td>
+      <td class="td-dim" title="${esc2(l.escolaridade)}">${esc2(l.escolaridade)}</td>
+      <td class="td-score">${scorePill(l.score_dash)}</td>
+      <td class="td-score">${l.score_pd!==null&&l.score_pd!==undefined?scorePill(l.score_pd):'<span style="color:var(--muted);font-size:.68rem">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="ph-row">
+      <div>
+        <div class="ph-eye">Board Academy · Leads</div>
+        <div class="ph-ttl">${lbl} · ${mes}</div>
+        <div class="ph-sub">${leads.length} leads criados no mês · ${filtered.length} exibidos</div>
+      </div>
+    </div>
+    <div class="leads-toolbar">
+      <input class="leads-search" id="leadsSearchInput" type="text" placeholder="Buscar por nome, renda, cargo…" value="${esc2(LEADS_Q)}"
+        oninput="LEADS_Q=this.value;renderLeads()" />
+      <span class="leads-count">${filtered.length} de ${leads.length}</span>
+    </div>
+    <div class="leads-tbl-wrap">
+      <table class="leads-tbl">
+        <thead><tr>
+          ${thSort('title','Lead')}
+          ${thSort('status','Status')}
+          ${thSort('renda','Renda')}
+          ${thSort('cargo','Cargo')}
+          ${thSort('idade','Idade')}
+          ${thSort('escolaridade','Escolaridade')}
+          ${thSort('score_dash','Score Dashboard')}
+          ${thSort('score_pd','Score Pipedrive')}
+        </tr></thead>
+        <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Nenhum lead encontrado.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+function leadsSort(col){
+  if(LEADS_SORT.col===col) LEADS_SORT.dir=LEADS_SORT.dir==='asc'?'desc':'asc';
+  else { LEADS_SORT.col=col; LEADS_SORT.dir='desc'; }
+  renderLeads();
 }
 
 buildMesSelector();
