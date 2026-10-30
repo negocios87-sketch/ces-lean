@@ -131,6 +131,30 @@ tr.outros-hidden{display:none!important}
 
 /* ── ABA ANALÍTICA ── */
 #pageAnalitica{display:none}
+
+/* ── ABA LEADS ── */
+#pageLeads{display:none}
+.leads-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.leads-search{flex:1;min-width:180px;padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.8rem;background:var(--surface);color:var(--text);outline:none}
+.leads-search:focus{border-color:var(--gold)}
+.leads-count{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.leads-tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow)}
+.leads-tbl{width:100%;border-collapse:collapse;font-size:.78rem}
+.leads-tbl th{background:#f7f4ef;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:9px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.leads-tbl th:hover{color:var(--navy)}
+.leads-tbl th.sorted-asc::after{content:' ↑';color:var(--gold)}
+.leads-tbl th.sorted-desc::after{content:' ↓';color:var(--gold)}
+.leads-tbl td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+.leads-tbl tr:last-child td{border-bottom:none}
+.leads-tbl tr:hover td{background:#faf8f5}
+.leads-tbl .td-score{font-weight:700;text-align:center}
+.leads-tbl .td-name a{color:var(--navy);text-decoration:none;font-weight:500}
+.leads-tbl .td-name a:hover{color:var(--gold);text-decoration:underline}
+.leads-tbl .td-dim{color:var(--muted);font-size:.73rem;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.72rem;font-weight:700}
+.score-icp{background:#dcfce7;color:#166534}
+.score-low{background:#fee2e2;color:#991b1b}
+.score-mid{background:#fef9c3;color:#854d0e}
 .an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .an-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
 .an-card-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
@@ -272,6 +296,7 @@ tr.outros-hidden{display:none!important}
     <div style="display:flex;gap:3px;padding:10px 0">
       <button class="ptog" id="tabMain"     onclick="setTab('main')"     style="background:rgba(255,255,255,.15);color:#fff">Dashboard</button>
       <button class="ptog" id="tabAnalitica" onclick="setTab('analitica')" style="">Analítica</button>
+      <button class="ptog" id="tabLeads"    onclick="setTab('leads')"    style="">Leads</button>
     </div>
   </div>
   <div class="tb-right">
@@ -322,6 +347,14 @@ tr.outros-hidden{display:none!important}
   <div class="page">
     <div class="errbanner" id="errBannerAn"></div>
     <div id="contentAnalitica">
+      <div class="state-wrap"><div class="spinner"></div><span>Carregando…</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="pageLeads">
+  <div class="page">
+    <div id="contentLeads">
       <div class="state-wrap"><div class="spinner"></div><span>Carregando…</span></div>
     </div>
   </div>
