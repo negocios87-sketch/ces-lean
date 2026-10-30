@@ -253,7 +253,7 @@ app.get('/api/report', async (req,res) => {
     const allDays=Array.from({length:daysInMonth},(_,i)=>`${curYM}-${String(i+1).padStart(2,'0')}`);
 
     const empty = () => ({
-      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{},workshopCount:0}, sem:{} },
+      criados: { mes:{t:0,dia:{},diaA:{},diaG:{},diaP:{},st:{a:0,g:0,p:0},produtosVendidos:{},scoreFaixas:emptyFaixas(),funis:{},etapas:{},workshopCount:0,leads:[]}, sem:{} },
       ganhos:  { mes:{t:0,rev:0,dia:{},origens:{},origTemporal:{}}, sem:{} },
       camp:    { mes:{t:0,rev:0,dia:{},deals:[],produtos:{}}, sem:{} },
       perdidos:{ mes:{t:0,dia:{},motivos:{},motivosTimes:{'Time Diarley':{},'Time Denise':{},'Outros':{}},motivosPorCategoria:{cur:{},prev:{},prev2:{},antes:{}},origTemporal:{},scoreFaixas:emptyFaixas(),negociacao:[],
@@ -318,6 +318,20 @@ app.get('/api/report', async (req,res) => {
           if (!dc.mes.etapas[timeName][stageKey]) dc.mes.etapas[timeName][stageKey]={t:0,order:stageInfo.order};
           dc.mes.etapas[timeName][stageKey].t++;
         }
+        // Lista de leads (aba Leads)
+        const _scoreLead=calcularScore(deal,regrasScore);
+        dc.mes.leads.push({
+          id:   deal.id,
+          title: deal.title||'Sem título',
+          status: deal.status,
+          renda:       String(deal[FIELD_RENDA]||'').trim()||null,
+          cargo:       String(deal[FIELD_CARGO]||'').trim()||null,
+          idade:       String(deal[FIELD_IDADE]||'').trim()||null,
+          escolaridade:String(deal[FIELD_ESCOLARIDADE]||'').trim()||null,
+          score_dash:  _scoreLead,
+          score_pd:    null, // campo a definir — me passe a chave hash do campo "Pontuação" do Pipedrive
+        });
+
         // Produtos vendidos — todos os ganhos válidos da campanha, produto bruto
         const val=parseFloat(deal.value||0)||0;
         if (ganhoValidoIds.has(deal.id)&&val>0) {
@@ -481,6 +495,7 @@ app.get('/api/report', async (req,res) => {
         porSemana:weeks.map(w=>({w,v:p.criados.sem[w]||0})),
         produtosVendidos:Object.entries(p.criados.mes.produtosVendidos).sort((a,b)=>b[1].rev-a[1].rev).map(([nome,x])=>({nome,t:x.t,rev:x.rev,ticket:x.t?x.rev/x.t:0,deals:x.deals})),
         workshopCount: p.criados.mes.workshopCount,
+        leads: p.criados.mes.leads,
         scoreFaixas:serFaixas(p.criados.mes.scoreFaixas, p.criados.mes.t - p.criados.mes.workshopCount),
         etapas: Object.fromEntries(
           Object.entries(p.criados.mes.etapas).map(([funil,etapas])=>[funil,
