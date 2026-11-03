@@ -49,11 +49,28 @@ def _carregar_crn():
     sys.path.insert(0, os.path.join(base, "pacote"))
     return os.path.basename(raiz).rsplit("-", 1)[-1][:7]   # commit que entrou
 
-_COMMIT_CRN = _carregar_crn()
+# Se a CRN não carregar, o painel não cai: toda rota responde o motivo em JSON (aparece na tela).
+_ERRO_CRN = None
+try:
+    _COMMIT_CRN = _carregar_crn()
+    import crn
+    if _COMMIT_CRN:
+        crn.versao = lambda: _COMMIT_CRN                    # carimbo mostra o commit carregado
+except Exception as _e:
+    import traceback
+    traceback.print_exc()
+    _ERRO_CRN = f"{type(_e).__name__}: {_e}"
 
-import crn
-if _COMMIT_CRN:
-    crn.versao = lambda: _COMMIT_CRN                        # carimbo mostra o commit carregado
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+
+@app.before_request
+def _crn_indisponivel():
+    if _ERRO_CRN:
+        return jsonify({"ok": False, "error": f"CRN não carregou: {_ERRO_CRN}"}), 500
+
 
 # ── Imports do painel ─────────────────────────────────────────
 import csv
@@ -64,18 +81,16 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 
 import requests
-from flask import Flask, jsonify, request
 
-from crn.base import pipedrive
-from crn.base.config import campo, filtro
-from crn.base.fuso import agora_brasil, data_brasil, hoje_brasil
-from crn.base.texto import cf, numero
-from crn.regras import (cs_l_lead_ces, cs_v_venda_ces, en1_etapa_negociacao, g1_ganho_automatico, g2_produto,
-                        ld1_universo_leads, ld2_tipo_lead, ln_l_lead_lean, ln_v_venda_lean, m1_ganho_closer,
-                        m8_deal_perdido, p1_motivo_perda, pf_l_lead_pfcc, r3_moeda, r4_cortesia,
-                        sc3_score_dados, sc4_score_painel, ws1_workshop)
-
-app = Flask(__name__)
+if not _ERRO_CRN:
+    from crn.base import pipedrive
+    from crn.base.config import campo, filtro
+    from crn.base.fuso import agora_brasil, data_brasil, hoje_brasil
+    from crn.base.texto import cf, numero
+    from crn.regras import (cs_l_lead_ces, cs_v_venda_ces, en1_etapa_negociacao, g1_ganho_automatico, g2_produto,
+                            ld1_universo_leads, ld2_tipo_lead, ln_l_lead_lean, ln_v_venda_lean, m1_ganho_closer,
+                            m8_deal_perdido, p1_motivo_perda, pf_l_lead_pfcc, r3_moeda, r4_cortesia,
+                            sc3_score_dados, sc4_score_painel, ws1_workshop)
 
 # Token: mesmo nome de sempre (PIPEDRIVE_TOKEN). A crn lê sozinha.
 API_TOKEN = (os.environ.get("PIPEDRIVE_TOKEN") or "").strip()
