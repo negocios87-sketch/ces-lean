@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/api/:path*", "destination": "/api/index" }]
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/crn-versao", "destination": "/api/index" }
+  ]
 }
