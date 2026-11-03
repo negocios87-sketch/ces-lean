@@ -860,8 +860,8 @@ function render(){
 
     <div class="kpi-row kpi5">
       <div class="kpi"><div class="kpi-accent" style="background:${col}"></div>
-        <div class="lbl">Total criado no mês</div><div class="val">${fmtN(criados.total)}</div>
-        <div class="sub">${criados.mediaDia} por dia</div>
+        <div class="lbl">Leads no mês (última aplicação)</div><div class="val">${fmtN(criados.total)}</div>
+        <div class="sub">${criados.mediaDia} por dia${criados.reaplicados?' · '+criados.reaplicados.pct+'% reaplicados':''}</div>
         ${(criados.workshopCount||0)>0?`<div class="sub" style="margin-top:5px;display:flex;align-items:center;gap:5px"><span style="background:#6b5e9a;color:#fff;font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:10px">WORKSHOP/SALA</span><span style="font-weight:600;color:#6b5e9a">${criados.workshopCount}</span><span style="color:var(--muted);font-size:.67rem">não pontuados</span></div>`:''}
         ${SNAP&&SNAP.data?deltaHtml(criados.total,SNAP.data[PROD]?.criados?.total):''}</div>
       <div class="kpi"><div class="kpi-accent" style="background:var(--navy)"></div>
@@ -1002,7 +1002,7 @@ function render(){
 
     <div class="pfooter">
       <span>Board Academy · CES &amp; LEAN · Inteligência Comercial</span>
-      <span>Atualizado em ${new Date(DATA.updatedAt).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</span>
+      <span>${esc(DATA.carimbo||'')} · Atualizado em ${new Date(DATA.updatedAt).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</span>
     </div>
   `;
 
@@ -1612,9 +1612,9 @@ function buildPrintHtml(snap){
       <tr><td>${x.w.slice(8)+'/'+x.w.slice(5,7)}</td><td><strong>${fmtN2(x.v)}</strong></td></tr>`).join('');
 
     // ── Score ─────────────────────────────────────────────────
-    const scoreBase = criados.total - (criados.workshopCount||0);
+    const scoreBase = (criados.scoreBase!=null) ? criados.scoreBase : criados.total - (criados.workshopCount||0);
     const scoreRows = (criados.scoreFaixas||[]).map(f=>bar(f.label,f.v,scoreBase,col)).join('');
-    const scorePerdRows = (perdidos.scoreFaixas||[]).map(f=>bar(f.label,f.v,perdidos.total,'#c0533a')).join('');
+    const scorePerdRows = (perdidos.scoreFaixas||[]).map(f=>bar(f.label,f.v,(perdidos.scoreBase!=null?perdidos.scoreBase:perdidos.total),'#c0533a')).join('');
 
     // ── Ganhos por dia ────────────────────────────────────────
     const ganhosDiaRows = ganhos.porProduto.porDia.filter(x=>x.v>0).map(x=>`
@@ -1664,7 +1664,7 @@ function buildPrintHtml(snap){
       </div>
 
       <div class="krow">
-        ${kpi('Total Criados',fmtN2(criados.total),criados.mediaDia+' por dia')}
+        ${kpi('Leads no mês (última aplicação)',fmtN2(criados.total),criados.mediaDia+' por dia'+(criados.reaplicados?' · '+criados.reaplicados.pct+'% reaplicados':''))}
         ${kpi('Em Aberto',fmtN2(criados.status.a),criados.total>0?((criados.status.a/criados.total)*100).toFixed(0)+'% do total':'—')}
         ${kpi('Ganhos dos criados',fmtN2(criados.status.g),'leads criados este mês')}
         ${kpi('Perdidos dos criados',fmtN2(criados.status.p),'leads criados este mês')}
@@ -1893,7 +1893,7 @@ async function doRefresh(){
 }
 
 /* ── Leads ── */
-let LEADS_SORT = {col:'score_dash', dir:'desc'};
+let LEADS_SORT = {col:'score_pd', dir:'desc'};
 let LEADS_Q = '';
 
 function renderLeads(){
@@ -1971,8 +1971,8 @@ function renderLeads(){
           ${thSort('cargo','Cargo')}
           ${thSort('idade','Idade')}
           ${thSort('escolaridade','Escolaridade')}
-          ${thSort('score_dash','Score Dashboard')}
-          ${thSort('score_pd','Score Pipedrive')}
+          ${thSort('score_dash','Score recalculado (conferência)')}
+          ${thSort('score_pd','Score (Pontuação Pipedrive)')}
         </tr></thead>
         <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Nenhum lead encontrado.</td></tr>'}</tbody>
       </table>
