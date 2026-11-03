@@ -57,9 +57,13 @@ try:
     if _COMMIT_CRN:
         crn.versao = lambda: _COMMIT_CRN                    # carimbo mostra o commit carregado
 except Exception as _e:
-    import traceback
-    traceback.print_exc()
-    _ERRO_CRN = f"{type(_e).__name__}: {_e}"
+    import re
+    # Nunca mostrar token na tela: tira qualquer coisa com cara de token do GitHub.
+    _ERRO_CRN = re.sub(r"(github_pat_|ghp_|gho_|ghs_)[A-Za-z0-9_]+", "[token oculto]",
+                       f"{type(_e).__name__}: {_e}")
+    if "header" in _ERRO_CRN.lower():
+        _ERRO_CRN = ("CRN_GITHUB_TOKEN com formato inválido (espaço, quebra de linha ou token colado mais de "
+                     "uma vez). Deixe só um token, numa linha, e faça Redeploy.")
 
 from flask import Flask, jsonify, request
 
