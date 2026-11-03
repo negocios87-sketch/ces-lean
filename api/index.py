@@ -82,14 +82,14 @@ import calendar
 import re
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import requests
 
 if not _ERRO_CRN:
     from crn.base import pipedrive
     from crn.base.config import campo, filtro
-    from crn.base.fuso import agora_brasil, data_brasil, hoje_brasil
+    from crn.base.fuso import TZ_BR, agora_brasil, data_brasil, hoje_brasil
     from crn.base.texto import cf, numero
     from crn.regras import (cs_l_lead_ces, cs_v_venda_ces, en1_etapa_negociacao, g1_ganho_automatico, g2_produto,
                             ld1_universo_leads, ld2_tipo_lead, ln_l_lead_lean, ln_v_venda_lean, m1_ganho_closer,
@@ -284,6 +284,14 @@ def carregar_turmas() -> list[dict]:
 
 
 # ── Busca ─────────────────────────────────────────────────────
+def leads_desde(ini: date) -> list[dict]:
+    """Universo LD1 (filtro de leads), só os deals atualizados desde ini.
+    Quem aplicou a partir de ini foi atualizado a partir de ini: o universo do período não muda,
+    e a busca não traz o ano inteiro (que estourava a memória da função)."""
+    desde = datetime.combine(ini, datetime.min.time(), tzinfo=TZ_BR).astimezone(timezone.utc)
+    return pipedrive.deals(filter_id=filtro("leads"), updated_since=desde.strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+
 def carregar(cur_ym: str):
     y, m = map(int, cur_ym.split("-"))
     mes_ini = date(y, m, 1)
@@ -291,7 +299,7 @@ def carregar(cur_ym: str):
     weeks = semanas()
     per = janelas(mes_ini, mes_fim, weeks)
     with ThreadPoolExecutor(max_workers=8) as ex:
-        f_leads = ex.submit(pipedrive.deals_do_filtro, filtro("leads"))       # LD1 (ainda por filtro salvo)
+        f_leads = ex.submit(leads_desde, min(i for i, _ in per))           # LD1 (filtro de leads)
         f_ganhos = ex.submit(buscar, pipedrive.ganhos_do_periodo, per)
         f_perd = ex.submit(buscar, pipedrive.perdidos_do_periodo, per)
         f_usu = ex.submit(pipedrive.usuarios)
@@ -690,7 +698,8 @@ def debug_ganhos_criados():
         mes = mes_pedido()
         usuarios = pipedrive.usuarios()
         resultado = []
-        for d in pipedrive.deals_do_filtro(filtro("leads")):
+        y, m = map(int, mes.split("-"))
+        for d in leads_desde(date(y, m, 1)):
             if not cs_l_lead_ces.eh_lead_ces(d) or ym(data_aplicacao(d)) != mes or not ganho_valido(d, usuarios):
                 continue
             ad, wd = data_brasil(d.get("add_time")), data_brasil(d.get("won_time"))
@@ -714,7 +723,8 @@ def debug_funis():
     try:
         funis = pipedrive.funis()
         counts = {}
-        for d in pipedrive.deals_do_filtro(filtro("leads"))[:200]:
+        hoje = hoje_brasil()
+        for d in leads_desde(date(hoje.year, hoje.month, 1))[:200]:
             pid = d.get("pipeline_id")
             k = f"{pid} → {funis.get(pid, '(sem nome)')}"
             counts[k] = counts.get(k, 0) + 1
