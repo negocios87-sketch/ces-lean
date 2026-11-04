@@ -124,9 +124,9 @@ MES_NOMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out
 
 def carimbo() -> str:
     return (f"CRN {crn.versao()} · Leads: data da última aplicação · Ganhos: data de ganho · "
-            f"Perdidos: data de perda · Valor: bruto · Score: Pontuação do Pipedrive (SC4), faixas de 2 a 10 · "
+            f"Perdidos: data de perda · Valor: bruto · Score: Pontuação do Pipedrive (SC4), só leads com as 4 respostas (idade, formação, renda e cargo), faixas de 2 a 10 · "
             f"Semana: segunda a domingo · Média por dia corrido · "
-            f"SLA Ganhos: score (SC4) dos ganhos do ano, por produto vendido")
+            f"SLA Ganhos: mesmo score, ganhos do ano por produto vendido")
 
 
 # ── Utilidades de data (sempre sobre datas já em Brasília) ────
@@ -225,6 +225,15 @@ def ganho_valido(deal: dict, usuarios: dict) -> bool:
 
 def data_aplicacao(deal: dict) -> date | None:
     return ld1_universo_leads.data_do_lead(deal, "aplicacao")
+
+
+def score_painel(deal: dict) -> float | None:
+    """Score exibido (SC4) só para quem respondeu as 4 perguntas (idade, formação, renda e cargo).
+    Recorte deste painel, decidido pelo Rodrigo em 04/11/2026: vale também para LEAN/CES, que na SC4 não têm trava.
+    Workshop/Sala segue sem score (SC4). Sem as 4 respostas = sem score (não entra nas faixas nem na base)."""
+    if not sc4_score_painel.cadastro_completo(deal):
+        return None
+    return sc4_score_painel.score(deal)
 
 
 def faixa_score(score) -> str | None:
@@ -382,7 +391,7 @@ def gerar_report(cur_ym: str) -> dict:
         status = deal.get("status")
         g_ok = ganho_valido(deal, usuarios)
         workshop = ws1_workshop.utm_eh_workshop(utm(deal))
-        sc = sc4_score_painel.score(deal)
+        sc = score_painel(deal)
         fx = faixa_score(sc)
         reaplicado = ld2_tipo_lead.tipo_lead(deal) == "REAPLICADO"
         for camp in alvos:
@@ -514,7 +523,7 @@ def gerar_report(cur_ym: str) -> dict:
         no_mes, w, d = ym(dia) == cur_ym, inicio_semana(dia), dia.isoformat()
         motivo = p1_motivo_perda.motivo(deal)
         cat = categoria(deal)
-        sc = sc4_score_painel.score(deal)
+        sc = score_painel(deal)
         fx = faixa_score(sc)
         negoc = en1_etapa_negociacao.eh_negociacao(deal)
         for camp in alvos:
@@ -675,7 +684,7 @@ def gerar_report(cur_ym: str) -> dict:
 
 # ── SLA Ganhos (linha de referência dos gráficos de score) ────
 # Distribuição por faixa do score (SC4) de todos os ganhos válidos (M1) do ano corrente, por produto vendido
-# (LN-V / CS-V; combo conta nos dois). Ganho sem score (Workshop/Sala ou cadastro incompleto, SC4) fica fora da base.
+# (LN-V / CS-V; combo conta nos dois). Ganho sem score (Workshop/Sala ou sem as 4 respostas) fica fora da base.
 # Busca grande (o ano todo): vai numa rota própria, com cache em memória, para não pesar no /api/report.
 _SLA_CACHE = {"quando": None, "ano": None, "dados": None}
 _SLA_TTL = timedelta(hours=6)
@@ -695,7 +704,7 @@ def calcular_sla() -> dict:
         prods = produtos_venda(d, opcoes_np)
         if not prods:
             continue
-        sc = sc4_score_painel.score(d)
+        sc = score_painel(d)
         fx = faixa_score(sc)
         for p in prods:
             ganhos[p] += 1
