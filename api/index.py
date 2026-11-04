@@ -125,7 +125,8 @@ MES_NOMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out
 def carimbo() -> str:
     return (f"CRN {crn.versao()} · Leads: data da última aplicação · Ganhos: data de ganho · "
             f"Perdidos: data de perda · Valor: bruto · Score: Pontuação do Pipedrive (SC4), faixas de 2 a 10 · "
-            f"Semana: segunda a domingo · Média por dia corrido")
+            f"Semana: segunda a domingo · Média por dia corrido · "
+            f"SLA Ganhos: score (SC4) dos ganhos do ano, por produto vendido")
 
 
 # ── Utilidades de data (sempre sobre datas já em Brasília) ────
@@ -672,7 +673,60 @@ def gerar_report(cur_ym: str) -> dict:
     }
 
 
+# ── SLA Ganhos (linha de referência dos gráficos de score) ────
+# Distribuição por faixa do score (SC4) de todos os ganhos válidos (M1) do ano corrente, por produto vendido
+# (LN-V / CS-V; combo conta nos dois). Ganho sem score (Workshop/Sala ou cadastro incompleto, SC4) fica fora da base.
+# Busca grande (o ano todo): vai numa rota própria, com cache em memória, para não pesar no /api/report.
+_SLA_CACHE = {"quando": None, "ano": None, "dados": None}
+_SLA_TTL = timedelta(hours=6)
+
+
+def calcular_sla() -> dict:
+    hoje = hoje_brasil()
+    ini = date(hoje.year, 1, 1)
+    usuarios = pipedrive.usuarios()
+    opcoes_np = pipedrive.opcoes_campo(campo("nome_produto"))
+    validos = m1_ganho_closer.separar_ganhos(pipedrive.ganhos_do_periodo(ini, hoje), usuarios=usuarios,
+                                             ini=ini, fim=hoje)["validos"]
+    cont = {"LEAN": empty_faixas(), "CES": empty_faixas()}
+    base = {"LEAN": 0, "CES": 0}
+    ganhos = {"LEAN": 0, "CES": 0}
+    for d in validos:
+        prods = produtos_venda(d, opcoes_np)
+        if not prods:
+            continue
+        sc = sc4_score_painel.score(d)
+        fx = faixa_score(sc)
+        for p in prods:
+            ganhos[p] += 1
+            if sc is None:
+                continue
+            base[p] += 1
+            if fx:
+                cont[p][fx] += 1
+    pct = lambda p: [round(cont[p][f["label"]] / base[p] * 100, 1) if base[p] else 0 for f in SCORE_FAIXAS]
+    return {"lean": pct("LEAN"), "ces": pct("CES"),
+            "base": {"lean": base["LEAN"], "ces": base["CES"]},
+            "ganhos": {"lean": ganhos["LEAN"], "ces": ganhos["CES"]},
+            "periodo": f"{ini.isoformat()} a {hoje.isoformat()}"}
+
+
 # ── Rotas ─────────────────────────────────────────────────────
+@app.get("/api/sla")
+def sla():
+    if not API_TOKEN:
+        return jsonify({"ok": False, "error": "PIPEDRIVE_TOKEN não configurado."}), 500
+    try:
+        agora = agora_brasil()
+        c = _SLA_CACHE
+        if not (c["dados"] and c["ano"] == agora.year and c["quando"] and agora - c["quando"] < _SLA_TTL):
+            c.update(dados=calcular_sla(), ano=agora.year, quando=agora)
+        return jsonify({"ok": True, **c["dados"]})
+    except Exception as e:
+        print("[/api/sla]", repr(e))
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.get("/crn-versao")
 def crn_versao():
     return jsonify({"versao": crn.versao()})
